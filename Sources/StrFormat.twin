@@ -1,4 +1,4 @@
-Class Formatter
+Class StrFormat
 
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = True
@@ -55,9 +55,10 @@ Class Formatter
     ' 
     '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
     Option Explicit
+    option base 0
 
 
-    Private Const MY_TYPENAME                       As String = "Format"
+    Private Const MY_TYPENAME                       As String = "StrFormat"
     Private Type State
 
         ' Cannot be a collection because we need the keys array
@@ -99,23 +100,23 @@ Class Formatter
     Private Const NO_PADDING                        As Boolean = False
 
     '@DefaultMember
-    Public Function Deb(Optional ByVal ipValueTypes As e_VarGenre = e_VarGenre.m_none, Optional ByVal ipHolderTypes As e_VarGenre = e_VarGenre.m_none) As Formatter
+    Public Function Deb(Optional ByVal ipValueGenre As e_VarGenre = e_VarGenre.m_none, Optional ByVal ipHolderGenre As e_VarGenre = e_VarGenre.m_none) As StrFormat
     
     Attribute Deb.VB_UserMemId = 0
-        Allow.InNumRange ipValueTypes, e_VarGenre.m_First, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
-        Allow.InNumRange ipHolderTypes, e_VarGenre.m_First, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        Contract.IsInNumRange ipValueGenre, e_VarGenre.m_None, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        Contract.IsInNumRange ipHolderGenre, e_VarGenre.m_None, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
         
-        With New Formatter
-            Set Deb = .ConstructInstance(ipValueTypes, ipHolderTypes)
+        With New StrFormat
+            Set Deb = .ConstructInstance(ipValueGenre, ipHolderGenre)
         End With
     End Function
 
 
-    Friend Function ConstructInstance(ByVal ipValueTypes As e_VarGenre, ByVal ipHolderTypes As e_VarGenre) As Formatter
+    Friend Function ConstructInstance(ByVal ipValueGenre As e_VarGenre, ByVal ipHolderGenre As e_VarGenre) As StrFormat
  
         
     
-        Set s.ToString = Stringifier(ipValueTypes, ipHolderTypes)
+        Set s.ToString = Stringifier(ipValueGenre, ipHolderGenre)
         s.ToString.ResetMarkup
         s.PadLeft = NO_PADDING
         s.PadRight = NO_PADDING
@@ -126,7 +127,7 @@ Class Formatter
     ' '@Description("Sets the level of type information included in the string")
     ' Public Function VarInfo(Optional ByVal ipVarInfo As e_VarInfo = e_VarInfo.m_value) As Stringifier
     
-    '     Allow.InNumRange ipVarInfo, e_VarInfo.m_First, e_VarInfo.m_Last, "Format.VarInfo"
+    '     Contract.IsInNumRange ipVarInfo, e_VarInfo.m_First, e_VarInfo.m_Last, "Format.VarInfo"
     
     '     s.VarInfo = ipVarInfo
     '     Set VarInfo = Me
@@ -383,7 +384,7 @@ Class Formatter
     End Function
 
 
-    Public Function ResetMarkup() As Formatter
+    Public Function ResetMarkup() As StrFormat
         s.ToString.SetArrayMarkup
         s.ToString.SetObjectMarkup
         s.ToString.SetDictionaryItemMarkup
@@ -399,7 +400,7 @@ Class Formatter
         Optional ByVal ipLeft As String = Chars.tbSpace & Chars.tbPlainSQuote, _
         Optional ByVal ipSeparator As String = Chars.tbColon & Chars.tbSpace, _
         Optional ByVal ipRight As String = Chars.tbPlainSQuote _
-    ) As Formatter
+    ) As StrFormat
         s.ToString.SetDictionaryItemMarkup ipLeft, ipSeparator, ipRight
         Return Me
     End Function
@@ -410,7 +411,7 @@ Class Formatter
         Optional ByVal ipLeft As String = Chars.tbLSQB, _
         Optional ByVal ipSeparator As String = Chars.tbComma, _
         Optional ByVal ipRight As String = Chars.tbRSQB _
-    ) As Formatter
+    ) As StrFormat
         s.ToString.SetArrayMarkup ipLeft, ipSeparator, ipRight
         Return Me
     End Function
@@ -420,7 +421,7 @@ Class Formatter
         Optional ByVal ipLeft As String = Chars.tbLCUB, _
         Optional ByVal ipSeparator As String = Chars.tbComma, _
         Optional ByVal ipRight As String = Chars.tbRCUB _
-    ) As Formatter
+    ) As StrFormat
         s.ToString.SetObjectMarkup ipLeft, ipSeparator, ipRight
         Return Me
     End Function
@@ -431,7 +432,7 @@ Class Formatter
            Optional ByVal ipLeft As String = Chars.tbLCUB, _
            Optional ByVal ipSeparator As String = Chars.tbComma, _
            Optional ByVal ipRight As String = Chars.tbRCUB _
-       ) As Formatter
+       ) As StrFormat
         s.ToString.SetItemMarkup ipLeft, ipSeparator, ipRight
         Return Me
     End Function
@@ -441,40 +442,40 @@ Class Formatter
            Optional ByVal ipLeft As String = Chars.tbLCUB, _
            Optional ByVal ipSeparator As String = Chars.tbComma, _
            Optional ByVal ipRight As String = Chars.tbRCUB _
-       ) As Formatter
+       ) As StrFormat
         s.ToString.SetItemMarkup ipLeft, ipSeparator, ipRight
         Return Me
     End Function
 
 
-    Public Function SetArrayMarkupSeparatorOnly() As Formatter
+    Public Function SetArrayMarkupSeparatorOnly() As StrFormat
         s.ToString.SetArrayMarkup ipLeft:=vbNullString, ipRight:=vbNullString
         Return Me
     End Function
 
-    Public Function SetObjectMarkupSeparatorOnly() As Formatter
+    Public Function SetObjectMarkupSeparatorOnly() As StrFormat
         s.ToString.SetObjectMarkup ipLeft:=vbNullString, ipRight:=vbNullString
         Return Me
     End Function
 
 
-    Public Function SetDictionaryItemMarkupSeparatorOnly() As Formatter
+    Public Function SetDictionaryItemMarkupSeparatorOnly() As StrFormat
         s.ToString.SetDictionaryItemMarkup vbNullString, Chars.tbComma, vbNullString
         Return Me
     End Function
 
-    Public Function UseItemMarkupOnly() As Formatter
+    Public Function UseItemMarkupOnly() As StrFormat
         s.ToString.UseItemMarkupOnly
         Return Me
     End Function
 
-    Public Function NoMarkup() As Formatter
+    Public Function NoMarkup() As StrFormat
         s.ToString.NoMarkup
         Return Me
     End Function
 
 
-    Public Function PadRight(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As Formatter
+    Public Function PadRight(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As StrFormat
         Set PadRight = Me
         If s.PadLeft Then
             Exit Function
@@ -485,7 +486,7 @@ Class Formatter
         Return Me
     End Function
 
-    Public Function PadLeft(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As Formatter
+    Public Function PadLeft(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As StrFormat
         Set PadLeft = Me
         If s.PadRight Then
             Exit Function

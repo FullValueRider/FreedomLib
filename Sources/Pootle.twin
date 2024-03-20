@@ -1,13 +1,115 @@
-	Module Pootle
-
+Module Pootle
+    
+Option Explicit
+Option Base 0
 
 Type TestType
-	X As Long
+    x As Long
 End Type
+
+
+Public Sub testVarvt()
+    ' Demonstrates that arrays containg UDT cannot be converted to a variant
+    Dim myVar() As TestType
+    ReDim myVar(1 To 5)
+    myVar(1).x = 10
+    myVar(2).x = 20
+    myVar(3).x = 30
+    myVar(4).x = 40
+    myVar(5).x = 50
+    Debug.Print TypeName(myVar)
+    Unsafe.ReportSA(myVar)
+    Dim myVar2 As Variant
+    myVar2 = myVar
+    Debug.Print TypeName(myVar2)
+    Unsafe.ReportSA(myVar2)
+    'myVar2(2).x = 42
+    
+    Debug.Print TypeName(myArray)
+    Dim myArray(1 To 5) As Long
+    Unsafe.ReportSA(myArray)
+    'Debug.Print myVar(2).x, myVar2(2).x
+    Dim myObjects(1 To 5) As PointXY
+    Debug.Print TypeName(myObjects)
+End Sub
+
+Public Sub TestSADims()
+    Dim myA(1 To 5, 1 To 5, 1 To 5) As Integer
+    ReportSA myA
+End Sub
+
+Public Sub TestArrayListToArray()
+    Dim myAL As ArrayList
+    Set myAL = New ArrayList
+    myAL.Add 10
+    myAL.Add 20
+    myAL.Add 30
+    Dim myItems As Variant = myAL.ToArray
+    ' does not respect option base 1
+    Debug.Print myItems(0)
+	Debug.Print myItems(1)
+    
+End Sub
+
+
+Public Sub TestIsArrayInitialized()
+    Dim myItem As Long = 42
+    'Returns false for a non array.
+    Debug.Print IsArrayInitialized(myItem)
+End Sub
+
+
+Public Function ReturnMissing(Optional ByRef ipMissing As Variant) As Variant
+    Return ipMissing
+End Function
+
+Public Sub MissingVarType()
+    'Debug.Print VarType(ReturnMissing)
+    Dim myVar As Variant = ReturnMissing
+    Debug.Print VarType(myVar), TypeName(myVar)
+End Sub
+Public Sub ErrTypename()
+    Debug.Print TypeName(Err), VarType(Err), VBA.IsObject(Err)
+    Debug.Print TypeName(VBA.CVErr(42)), VBA.VarType(VBA.CVErr(42)), VBA.IsObject(VBA.CVErr(42))
+    Debug.Print TypeName(Nothing), VBA.VarType(Nothing), VBA.IsObject(Nothing)
+    ' Dim myIndex As Long
+    ' For myIndex = (Null) To (Null)
+    ' 	Debug.Print myIndex
+    ' Next
+End Sub
 	Sub Testadmin()
+		
     	Debug.Print TypeInfo.IsNotNull(Empty)
         
 	End Sub
+    
+    Sub testarrayreturn()
+        Dim myName As String
+        Dim myNum As Long
+        Array(myName, myNum) = GetName
+        Debug.Print myName, myNum
+    End Sub
+    
+    Public Function GetName() As Variant
+    	Return Array("MyName", 42)
+    End Function
+    Public Sub TestIsMissing()
+    	OptionalVar
+    End Sub
+    Public Sub OptionalVar(Optional ByRef ipItem As Variant)
+    	If IsMissing(ipItem) Then
+        	Debug.Print "IsMissing"
+        Else
+            Debug.Print "Not Is Missing"
+    	End If
+        
+        Dim myI As Integer = 0
+        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myI), ByVal VarPtr(ipItem)
+        Debug.Print Hex(myI)
+        Dim myL As Long = 0
+        vbaCopyBytes LenB(Of Long), ByVal VarPtr(myL), ByVal VarPtr(ipItem) + 8
+        Debug.Print myL
+    End Sub
 	Sub TestNothingNames()
 		Debug.Print TypeName(Nothing), VarType(Nothing)
 	End Sub
@@ -57,12 +159,12 @@ End Type
    
 	Sub TestType()
 		Dim myT As TestType
-		myT.X = 42
+		myT.x = 42
 		Dim myC As Collection = New Collection
 		myC.Add myT
 
 		Debug.Print myC.Item(1)
-		myT.X = 42
+		myT.x = 42
 		Debug.Print "My user defined type is ", VBA.VarType(myT), VBA.TypeName(myT)
 	End Sub
 	

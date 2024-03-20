@@ -4,9 +4,10 @@ Class Maths
     Attribute VB_Creatable = False
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
+   
     Option Explicit
-    '@PredeclaredId
-    '@Exposed
+    Option Base 0
+ 
 
     Public Function IsEven(ByRef ipItem As Variant) As Boolean
         IsEven = (ipItem Mod 2 = 0)

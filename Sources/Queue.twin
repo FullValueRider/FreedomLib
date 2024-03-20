@@ -1,4 +1,4 @@
-[ Description ("A Queue class for twinBasic to remove dependency on mscorlib") ]
+[Description("A Queue class for twinBasic to remove dependency on mscorlib")]
 Class Queue
 
     ' This class uses the twinBasic Collection as the host
@@ -11,6 +11,7 @@ Class Queue
     Attribute VB_Exposed = True
 
     Option Explicit
+    Option Base 0
 
     Private Type state
         Host                                    As Collection
@@ -18,8 +19,8 @@ Class Queue
 
     Private s                                   As state
 
-    [ Description (" The constructor version of Stack will take an array or collection as multiple items, any other non-empty value is treated as a single item)") ]
-    [ DefaultMember ]
+    [Description(" The constructor version of Stack will take an array or collection as multiple items, any other non-empty value is treated as a single item)")]
+    [DefaultMember]
     Public Function Deb(ParamArray ipItems() As Variant) As Queue
         With New Queue
             Return .ConstructInstance(VBA.CVar(ipItems))
@@ -72,7 +73,7 @@ Class Queue
     Public Function Enqueue(ByRef ipItem As Variant) As Queue
     	If VBA.IsNull(ipItem) Then
         	Err.Raise 17 + vbObjectError, _
-                "FreedomLib.Base.Queue.Enqueue" , _
+                "FreedomLib.Base.Queue.Enqueue", _
                 "ipItem is 'Null'.  Null values are not permitted in a Queue"
     	End If
         s.Host.Add ipItem
@@ -120,7 +121,7 @@ Class Queue
 
     Public Sub CopyTo(ByRef ipArray As Variant, ByRef ipStart As Long)
     
-        Dim myDIms As Long = Unsafe.ArrayDims(ipArray)
+        Dim myDIms As Long = Unsafe.SADims(ipArray)
         If myDIms <> 1 Then
             Err.Raise 17 + vbObjectError, _
                 "FreedonLib.Base.Stack.CopyTo", _

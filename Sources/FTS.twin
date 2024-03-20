@@ -1,0 +1,80 @@
+[Description("A Class that encapsulates from, to, step and rank information.  From and To are specified as 1 based Offsets from the first index (+ve) or lastindex( -ve).  i.e. 1 to -1 represents FirstIndex To LastIndex")]
+Class FTS ' From To Step
+    /* This class provides the from too step rank information for a single dimension. */
+    
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    Option Base 0
+    
+    Private Const MY_TYPENAME                           As String = "FTS"
+    Private Const MY_LOC                                As String = "FreedomLib.FBase.FTS."
+    
+    
+    Public Type FTSRange
+        From                                            As Decimal
+        To                                              As Decimal
+        Step                                            As Decimal
+        Rank                                            As Long
+    End Type
+    
+    Private Type Properties
+
+        Data                                            As FTSRange
+
+    End Type
+
+    Private p                                           As Properties
+
+
+    [DefaultMember]
+    Public Function Deb(Optional ByRef ipFrom As Decimal = 1, Optional ByRef ipTo As Decimal = -1, Optional ByRef ipStep As Decimal = 1, Optional ByVal ipRank As Long = 1) As FTS
+        With New FTS
+            Return .ConstructInstance(ipFrom, ipTo, ipStep, ipRank)
+        End With
+    End Function
+
+    Public Function ConstructInstance(ByRef ipFrom As Decimal, ByRef ipTo As Decimal, ByRef ipStep As Decimal, ByVal ipRank As Long) As FTS
+        /* 
+            From, and To are specified in terms of offsets+1
+            Positive values are offsets+1 from the first index
+            Negative numbers are offsets+1 from the last index
+            This apprach allows symmetrical indexing e.g. 1 to -1 is effectively firstindex to lastindex
+            The step represents the magnitude of the steps needed to move from first index to wards lastindex
+        */
+        Contract.IsNotValue ipFrom, 0, MY_LOC, "From and To indexes cannot be 0"
+        Contract.IsNotValue ipTo, 0, MY_LOC, "From and To indexes cannot be 0"
+        Contract.IsMT0 ipRank, MY_LOC & CurrentProcedureName, "Ranks cannot be less than 1"
+        Contract.IsMT0 ipStep, MY_LOC & CurrentProcedureName, "The step must be specified as a positive number greater than 0"
+
+        p.Data.Rank = ipRank
+        p.Data.From = ipFrom
+        p.Data.To = ipTo
+        p.Data.Step = ipStep
+        
+        Return Me
+
+    End Function
+
+    Public Property Get Data() As FTSRange
+        Return p.Data
+    End Property
+    
+    Public Function ToString() As String
+        With p.Data
+            Return VBA.Join(Me.ToArray, Chars.tbComma)
+        End With
+    End Function
+    
+    Public Function ToArray() As Variant
+        With p.Data
+            Return Array(.From,.To,.Step,.Rank)
+        End With
+    End Function
+
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+    
+End Class

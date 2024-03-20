@@ -1,5 +1,5 @@
-[ Description ("This class facilitates converting variables of any type to a string representation." _
-& "The output strings can optionall include the typename, both for standard variables and holder types.") ]
+[Description("This class facilitates converting variables of any type to a string representation." _
+& "The output strings can optionall include the typename, both for standard variables and holder types.")]
 Class Stringifier
  
     Attribute VB_Creatable = True
@@ -7,6 +7,7 @@ Class Stringifier
     Attribute VB_Exposed = True
     '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
     Option Explicit
+    Option Base 0
     
     ' Public Enum e_VarName
     ' 	m_None
@@ -17,18 +18,18 @@ Class Stringifier
     '     m_Group = m_Last
     ' End Enum
     
-    ' the enum below just renames the enum 
-    Public Enum e_VarGenre
+    ' 'the Enum below renames the e_GenreField enum from e_TypeInfo and adds m_none as a -1 option
+    ' Public Enum e_VarGenre
     	
-        m_None = e_Genrefield.m_None
-        m_First = e_VarGenre.m_None
-        m_FVarType = e_GenreField.m_Id
-        m_vbVarType = e_GenreField.m_VBVarType
-        m_Group = e_GenreField.m_Group
-        m_Entity = e_GenreField.m_Entity
-        m_Last
-        m_Holder = e_vargenre.m_last
-    End Enum
+    '     m_None = -1
+    '     m_First = e_VarGenre.m_None
+    '     m_FLib = e_GenreField.m_FLib
+    '     m_VBA = e_GenreField.m_VBA
+    '     m_Group = e_GenreField.m_Group
+    '     m_Entity = e_GenreField.m_Entity
+    '     m_Last
+    '     m_Holder = e_vargenre.m_last
+    ' End Enum
 
     ' names of methods that might be used to provide a string representation of an items object.
     Private Const TRY_METHODS_LIST                  As String = "tostring,to_string,tojson,to_json,value"
@@ -47,8 +48,10 @@ Class Stringifier
     'ValueGenre and HolderGenre specify the Genre to use for the typename (see Class TypeInfo enum e_Genre).
     '
     Private Type State
-        ValueGenre                                  As Long ' If type the variable Type is inserted before the value
-        HolderGenre                                  As Long' If True the Typename of the holder is inserted before the list of 
+        ' DefaultValueGenre                           As e_VarGenre ' If type the variable Type is inserted before the value
+        ' DefaultHolderGenre                          As e_VarGenre' If True the Typename of the holder is inserted before the list of 
+        ValueGenre                                  As e_VarGenre
+        HolderGenre                                 As e_VarGenre
     End Type
     
     Private s                                       As State
@@ -64,10 +67,12 @@ Class Stringifier
         Me.ResetMarkup
     End Sub
 
-
-    '@DefaultMember
-    Public Function Deb(Optional ByVal ipValueGenre As e_VarGenre = e_VarGenre.m_none, Optional ByVal ipHolderGenre As e_Holder = e_VarGenre.m_none) As Stringifier
+    
+    [DefaultMember]
+    Public Function Deb(Optional ByVal ipValueGenre As e_VarGenre = e_vargenre.m_none, Optional ByVal ipHolderGenre As e_VarGenre = e_vargenre.m_none) As Stringifier
     Attribute Deb.VB_UserMemId = 0
+        Contract.IsInNumRange ipValueGenre, e_VarGenre.m_None, e_VarGenre.m_Last, CurrentProjectName & Chars.tbComma & CurrentComponentName & Chars.tbComma & CurrentProcedureName
+        Contract.IsInNumRange ipValueGenre, e_VarGenre.m_None, e_VarGenre.m_Last, CurrentProjectName & Chars.tbComma & CurrentComponentName & Chars.tbComma & CurrentProcedureName
         With New Stringifier
             Set Deb = .ConstructInstance(ipValueGenre, ipHolderGenre)
         End With
@@ -75,8 +80,10 @@ Class Stringifier
 
     Friend Function ConstructInstance(ByVal ipValueGenre As e_VarGenre, ByVal ipHolderGenre As e_VarGenre) As Stringifier
     
+        ' we can't use is missing here because the parameters are no variants.
         s.ValueGenre = ipValueGenre
         s.HolderGenre = ipHolderGenre
+        	
         Set p.ArrayMarkup = TypeMarkup.Deb
         Set p.DictionaryItemMarkup = TypeMarkup.Deb
         Set p.ItemMarkup = TypeMarkup.Deb
@@ -202,111 +209,98 @@ Class Stringifier
         Set SetItemMarkup = Me
     End Function
 
-    ' '@Description("Sets the level of type information included in the string")
-    ' Public Function VarInfo(Optional ByVal ipVarInfo As e_VarInfo = e_VarInfo.m_Value) As Stringifier
-    
-    '     Allow.InNumRange ipVarInfo, e_VarInfo.m_First, e_VarInfo.m_Last, "Stringifier.VarInfo"
-    
-    '     p.VarInfo = ipVarInfo
-    '     Set VarInfo = Me
-    
-    ' End Function
-
-
     Public Function StringifyItem(ByRef ipItem As Variant) As String
   
         ' Get Ids for this item
         Dim myIds As Variant
-        If TypeInfo.TryGetIds(ipItem, myIds) Then
-            Err.Raise 17 + vbObjectError
+        If Not TypeInfo.TryGetIds(ipItem, myIds) Then
+            Return "Type not assigned: " & VBA.TypeName(ipItem)
         End If
         
+        Dim myNames As Variant
+        If Not TypeInfo.TryGetNames(VBA.CLng(myIds(e_GenreField.m_FLib)), myNames) Then
+            Return "Type not assigned: & VBA.TypeName(ipItem)"
+        End If
+        
+       
         ' use the ids to get the genre name for the item
         Dim myValuename As String
         If s.ValueGenre = e_VarGenre.m_None Then
         	myValuename = vbNullString
         Else
-            myValuename = TypeInfo.IdName(VBA.CLng(myIds(s.ValueGenre)))
+            myValuename = myNames(s.ValueGenre)
             myValuename = p.TypeMarkup.Left & myValuename & p.TypeMarkup.Separator & p.TypeMarkup.Right
         End If
       
        
-        ' Dim myValueName As String
-        ' Select Case s.ValueGenre
-        '     Case e_VarGenre.m_None:              myValueName = vbNullString
-        '     Case e_VarGenre.m_VBA:               myValueName = VBA.TypeName(ipItem)
-        '     Case e_VarGenre.m_TB:                myValueName = TypeInfo.FName(ipItem)
-        '     Case e_VarGenre.m_Group:             myValueName = TypeInfo.IdName(myGroupId)
-        ' End Select
         ' use the ids to get the genre name for the holder
-        Dim myHolderName As String
-        If s.HolderGenre = e_VarGenre.m_None Then
-            myHolderName = vbNullString
+        If myIds(e_GenreField.m_Group) = e_Group.m_Holder Then
+            Dim myHolderName As String
+            If s.HolderGenre = e_VarGenre.m_None Then
+                myHolderName = vbNullString
+            Else
+                If myIds(e_GenreField.m_Holder) = e_Holder.m_Array And s.HolderGenre = e_VarGenre.m_VBA Then
+                    myHolderName = VBA.TypeName(ipItem)
+                Else
+                    myHolderName = myNames(s.HolderGenre)
+                End If
+                myHolderName = p.TypeMarkup.Left & myHolderName & p.TypeMarkup.Separator & p.TypeMarkup.Right
+            End If
         Else
-            myHolderName = TypeInfo.IdName(VBA.CLng(myIds(s.HolderGenre)))
-            myHolderName = p.TypeMarkup.Left & myHolderName & p.TypeMarkup.Separator & p.TypeMarkup.Right
+        	myHolderName = vbNullString
         End If
-        
-    '    If TypeInfo.IsHolder(ipItem) Then
-    '         Select Case s.HolderGenre
-    '             Case e_VarName.m_None:              myHolderName = vbNullString
-    '             Case e_VarName.m_VBA:               myHolderName = VBA.TypeName(ipItem)
-    '             Case e_VarName.m_TB:                myHolderName = TypeInfo.FName(ipItem)
-    '             Case e_VarName.m_Group:             myHolderName = TypeInfo.GroupName(ipItem)
-    '         End Select
-    '     Else
-    '     	myHolderName = vbNullString
-    '     End If
-
-        ' If s.ValueGenre <> e_VarGenre.m_None Then
-        '     myValuename = p.TypeMarkup.Left & myValuename & p.TypeMarkup.Separator & p.TypeMarkup.Right
-        ' End If
-       
-        ' If s.HolderGenre <> e_VarGenre.m_None Then
-        ' 	myHolderName = p.TypeMarkup.Left & myHolderName & p.TypeMarkup.Separator & p.TypeMarkup.Right
-        ' End If
+         
         
         ' we now need to process variables which are holders (have multiple values)
         
-        If myIds(e_VarGenre.m_Holder) = e_Holder.m_IsNotHolder Then
-        	Select Case myIds(e_VarGenre.m_Group)
-            	
-                Case e_Group.m_Boolean, e_Group.m_Number
-                    Return myValuename & p.ItemMarkup.Left & VBA.CStr(ipItem) & p.ItemMarkup.Separator & p.ItemMarkup.Right
-                    
-                Case e_Group.m_Admin:                           StringifyItem = myValuename & StringifyAdmin(ipItem)
-                
-                Case e_Group.m_Number
-                    Return myValuename & p.ItemMarkup.Left & VBA.CStr(ipItem) & p.ItemMarkup.Separator & p.ItemMarkup.Right
-                    
-                Case e_Group.m_MVObject:                      StringifyItem = myValuename & StringifyItemObject(ipItem)
-                
-                Case Else
-                    Err.Raise 17 + vbObjectError, _
-                    "FreedomLib.FBase.Stringifier.StringifyItem", _
-                    "Group name not known " & TypeInfo.IdName(VBA.CLng(myIds(e_VarGenre.m_Group)))
-        	End Select
-       
-        Else
-            
+        If myIds(e_VarGenre.m_Group) = e_Group.m_Holder Then
+        	
             Select Case myIds(e_VarGenre.m_Holder)
-        
-                Case e_Holder.m_String
             
-                    Return myValuename & p.ItemMarkup.Left & ipItem & p.ItemMarkup.Right & p.ItemMarkup.Separator
+                Case e_Holder.m_String
+                
+                    Return myHolderName & myValuename & p.ItemMarkup.Left & ipItem & p.ItemMarkup.Right & p.ItemMarkup.Separator
+                            
+                Case e_Holder.m_Array:                           
+                    Select Case myIds(e_VarGenre.m_Group)
+                        Case m_NArray, m_UArray
+                            Return myValuename & p.ItemMarkup.Left & "No Dims" & p.ItemMarkup.Right & p.ItemMarkup.Separator
                         
-                Case e_Holder.m_Array:                           Return myHolderName & StringifyArray(ipItem)
+                        Case Else:
+                            Return myHolderName & StringifyArray(ipItem)
+                    End Select
                 Case e_Holder.m_ItemByIndex0:                    Return myHolderName & StringifyItemByIndex(ipItem)
                 Case e_Holder.m_ItemByIndex1:                    Return myHolderName & StringifyItemByIndex(ipItem)
                 Case e_Holder.m_ItemByToArray:                   Return myHolderName & StringifyItemByToArray(ipItem) ' byindex also works for ToArray
                 Case e_Holder.m_ItemByKey:                       Return myHolderName & StringifyItembyKey(ipItem)
-                
+                    
                 Case Else
                     Err.Raise 17 + vbObjectError, _
-                    "FreedomLib.FBase.Stringifier.StringifyItem", _
-                    "Holder name not known " & TypeInfo.IdName(VBA.CLng(myIds(e_VarGenre.m_Holder)))
-                    
+                        "FreedomLib.FBase.Stringifier.StringifyItem", _
+                        "Holder name not known " & TypeInfo.Name(ipItem, e_VarGenre.m_Holder)
+                        
             End Select
+        	
+       
+        Else
+            Select Case myIds(e_VarGenre.m_Group)
+                
+                   Case e_Group.m_Boolean, e_Group.m_Number
+                       Return myHolderName & myValuename & p.ItemMarkup.Left & VBA.CStr(ipItem) & p.ItemMarkup.Separator & p.ItemMarkup.Right
+                    
+                   Case e_Group.m_Admin:                            StringifyItem = myHolderName & myValuename & StringifyAdmin(ipItem)
+                
+                '    Case e_Group.m_Number
+                '        Return myValuename & p.ItemMarkup.Left & VBA.CStr(ipItem) & p.ItemMarkup.Separator & p.ItemMarkup.Right
+                    
+                   Case e_Group.m_mpObject:                         StringifyItem = myHolderName & myValuename & StringifyItemObject(ipItem)
+                
+                   Case Else
+                       Err.Raise 17 + vbObjectError, _
+                       "FreedomLib.FBase.Stringifier.StringifyItem", _
+                       "Group name not known " & TypeInfo.Name(ipItem, e_VarGenre.m_Group)
+               End Select
+            
             
         End If
             
@@ -361,18 +355,18 @@ Class Stringifier
 
     Friend Function StringifyArray(ByRef ipArray As Variant) As String
     
-        If Not IsArrayInitialized(ipArray) Then
-        	Return "!Not Initialised!"
-        End If
+        ' If Not IsArrayInitialized(ipArray) Then
+        ' 	Return "!Not Initialised!"
+        ' End If
         
-        If LBound(ipArray) > UBound(ipArray) Then
-        	Return "!Not Populated!"
-        End If
+        ' If LBound(ipArray) > UBound(ipArray) Then
+        ' 	Return "!Not Populated!"
+        ' End If
          
-        If TypeInfo.LacksItems(ipArray) Then
-            Return p.ArrayMarkup.Left & p.ArrayMarkup.Right
-            Exit Function
-        End If
+        ' If TypeInfo.LacksItems(ipArray) Then
+        '     Return p.ArrayMarkup.Left & p.ArrayMarkup.Right
+        '     Exit Function
+        ' End If
  
         Dim myC As Collection: Set myC = New Collection
     

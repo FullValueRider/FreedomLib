@@ -6,10 +6,9 @@ Module TestStringifier
     Public Sub StringifierTests()
  
         
-        Debug.Print CurrentProcedureName, vbTab,
-        
-        Test01_StringifyItem_String_NoTypeName
-        Test01a_StringifyItem_String_VBATypeName
+        Debug.Print CurrentComponentName,
+        Test01_StringifyItem_String_NoTypeName_NoHolderName
+        Test01a_StringifyItem_String_VBATypeName_NoHolderName
     
         Test02_StringifyItem_Long_NoTypeName
         Test02a_StringifyItem_Long_VBATypeName
@@ -68,13 +67,13 @@ Module TestStringifier
         ' Test08e_StringifyItem_admin_Group_VBA
         ' Test08f_StringifyItem_admint_Group_TB
         ' Test08g_StringifyItem_admin_Group_Group
-        Debug.Print "Testing completed"
+        Debug.Print vbTab, vbTab, "Testing completed"
 
     End Sub
 
 
     '@TestMethod("Stringifier")
-    Private Sub Test01_StringifyItem_String_NoTypeName()
+    Private Sub Test01_StringifyItem_String_NoTypeName_NoHolderName()
 
         'on error GoTo TestFail
     
@@ -100,7 +99,7 @@ Module TestStringifier
     End Sub
 
     '@TestMethod("Stringifier")
-    Private Sub Test01a_StringifyItem_String_VBATypeName()
+    Private Sub Test01a_StringifyItem_String_VBATypeName_NoHolderName()
 
         'on error GoTo TestFail
     
@@ -111,7 +110,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act: 
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem("Hello World!")
+        myResult = Stringifier(e_VarGenre.m_VBA, e_VarGenre.m_None).StringifyItem("Hello World!")
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -165,7 +164,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act:  Again we need to sort The result SeqC to get the matching array
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(42&)
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(42&)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -192,7 +191,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act:  Again we need to sort The result SeqC to get the matching array
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(42&)
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(42&)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -273,7 +272,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act:  Again we need to sort The result SeqC to get the matching array
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(Array(1, 2, 3, 4, 5, 6))
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -300,7 +299,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act:  Again we need to sort The result SeqC to get the matching array
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(Array(1, 2, 3, 4, 5, 6))
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -327,7 +326,7 @@ Module TestStringifier
         Dim myResult As String
     
         'Act:  Again we need to sort The result SeqC to get the matching array
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(Array(1, 2, 3, 4, 5, 6))
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -361,7 +360,7 @@ Module TestStringifier
         myI(4) = 40
         myI(5) = 50
         myI(6) = 60
-        myResult = Stringifier(e_VarGenre.m_FVarType, e_VarGenre.m_vbVarType).StringifyItem(myI)
+        myResult = Stringifier(e_VarGenre.m_FLib, e_VarGenre.m_VBA).StringifyItem(myI)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -395,7 +394,7 @@ Module TestStringifier
         myI(4) = 40
         myI(5) = 50
         myI(6) = 60
-        myResult = Stringifier(e_VarGenre.m_FVarType, e_VarGenre.m_FVarType).StringifyItem(myI)
+        myResult = Stringifier(e_VarGenre.m_FLib, e_VarGenre.m_FLib).StringifyItem(myI)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -416,7 +415,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "array: [number: 10,number: 20,number: 30,number: 40,number: 50,number: 60]"
+        myExpected = "holder: [number: 10,number: 20,number: 30,number: 40,number: 50,number: 60]"
     
         Dim myResult As String
     
@@ -503,7 +502,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myC)
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -540,7 +539,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myC)
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -616,7 +615,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myC)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_VBA).StringifyItem(myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -654,7 +653,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myC)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FLib).StringifyItem(myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -692,7 +691,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myC)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Holder).StringifyItem(myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -767,7 +766,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myAL)
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(myAL)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -804,7 +803,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myAL)
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(myAL)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -880,7 +879,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myAL)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_VBA).StringifyItem(myAL)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -918,7 +917,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myAL)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FLib).StringifyItem(myAL)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -956,7 +955,7 @@ Module TestStringifier
             .Add 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myAL)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Holder).StringifyItem(myAL)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1060,7 +1059,7 @@ Module TestStringifier
             .Enqueue 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myStk)
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(myStk)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1097,7 +1096,7 @@ Module TestStringifier
             .Enqueue 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myStk)
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(myStk)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1173,7 +1172,7 @@ Module TestStringifier
             .Enqueue 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myStk)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_VBA).StringifyItem(myStk)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1211,7 +1210,7 @@ Module TestStringifier
             .Enqueue 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myStk)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FLib).StringifyItem(myStk)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1249,7 +1248,7 @@ Module TestStringifier
             .Enqueue 60
         End With
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myStk)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Holder).StringifyItem(myStk)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1300,7 +1299,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "PointXY: {42,84}"
+        myExpected = "mpObject: {42,84}"
     
         Dim myResult As String
     
@@ -1308,7 +1307,7 @@ Module TestStringifier
         
         Dim myP As PointXY = PointXY(42, 84)
         
-        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myP)
+        myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(myP)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1329,7 +1328,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "compoundobject: {42,84}"
+        myExpected = "mpobject: {42,84}"
     
         Dim myResult As String
     
@@ -1337,7 +1336,7 @@ Module TestStringifier
         
         Dim myP As PointXY = PointXY(42, 84)
         
-        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myP)
+        myResult = Stringifier(e_VarGenre.m_FLib).StringifyItem(myP)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1359,7 +1358,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "itemobject: {42,84}"
+        myExpected = "mpobject: {42,84}"
     
         Dim myResult As String
     
@@ -1389,7 +1388,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "itemobject: {42,84}"
+        myExpected = "mpobject: {42,84}"
     
         Dim myResult As String
     
@@ -1397,7 +1396,7 @@ Module TestStringifier
         
         Dim myP As PointXY = PointXY(42, 84)
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myP)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_VBA).StringifyItem(myP)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1419,7 +1418,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "itemobject: {42,84}"
+        myExpected = "mpobject: {42,84}"
     
         Dim myResult As String
     
@@ -1427,7 +1426,7 @@ Module TestStringifier
         
         Dim myP As PointXY = PointXY(42, 84)
         
-        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myP)
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FLib).StringifyItem(myP)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -1449,7 +1448,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "itemobject: {42,84}"
+        myExpected = "mpobject: {42,84}"
     
         Dim myResult As String
     
@@ -1523,7 +1522,7 @@ Module TestStringifier
         ReDim myResult(0 To 3)
         Dim myIndex As Long
         For myIndex = 0 To 3
-            myResult(myIndex) = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myV(myIndex))
+            myResult(myIndex) = Stringifier(e_VarGenre.m_VBA).StringifyItem(myV(myIndex))
         Next
         'Assert:
         Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
@@ -1545,7 +1544,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As Variant
-        myExpected = Array("null: Null", "empty: Empty", "nothing: {Nothing}", "error: Error 42")
+        myExpected = Array("null: Null", "empty: Empty", "nothing: {Nothing}", "cverr: Error 42")
     
         'Act:  Again we need to sort The result SeqC to get the matching array
         
@@ -1556,7 +1555,7 @@ Module TestStringifier
         ReDim myResult(0 To 3)
         Dim myIndex As Long
         For myIndex = 0 To 3
-            myResult(myIndex) = Stringifier(e_varGenre.m_FVarType).StringifyItem(myV(myIndex))
+            myResult(myIndex) = Stringifier(e_VarGenre.m_FLib).StringifyItem(myV(myIndex))
         Next
         'Assert:
         Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName

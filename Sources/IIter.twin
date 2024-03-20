@@ -1,0 +1,55 @@
+Interface IIter
+
+    [Description("Sets the subrange and stepping to be used when using IIter. From,To parameters must use 1 based indexing. Step in the number of position to move in response to MoveNext/MovePrev. Mapping to the ative index is done by IIter")]
+    Function FTS(Optional ByRef ipStartIndex As Variant = Empty, Optional ByRef ipEndIndex As Variant = Empty, Optional ByRef ipStep As Long = 1) As IIter
+
+    [Description("MoveToEndIndex moves to the nearest step position before or equal to EndIndex")]
+    Function MoveToEndIndex() As IIter
+    
+    [Description("Moves to the defined Strt position")]
+    Function MoveToStartIndex() As IIter
+   
+    [Description("Moves to firstindex, resets StartIndex stop EndIndex")]
+    Function MoveToFirst() As IIter
+    
+    [Description("Moves to firstindex, resets StartIndex stop EndIndex")]
+    Function MoveToLast() As IIter
+    
+    Function HasNext(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+
+    Function HasNoNext(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+    
+    Function HasPrev(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+
+    Function HasNoPrev(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+    
+    Function MoveNext() As Boolean
+    
+    Function MovePrev() As Boolean
+    
+    [Description("Get the items at the global + local offset.  Default local offset = 0. offset = number of steps")]
+    Property Get CurItem(ByVal ipLocalOffset As Long) As Variant
+   
+    [Description("Assigns a value to the curretn non object Item")]
+    Property Let CurItem(ByVal ipLocalOffset As Long, ByVal ipItem As Variant)
+
+    [Description("Sets the value of the current object Item")]
+    Property Set CurItem(ByVal ipLocalOffset As Long, ByVal ipItem As Variant)
+
+    [Description("Returns the host index of the current item")]
+    Property Get CurKey(ByVal ipLocalOffset As Long) As Variant
+
+    [Description("Returns the 1 based index of the current item")]
+    Property Get CurOffset(ByVal ipLocalOffset As Long) As Variant
+   
+   
+   ' might not need the next two items
+    Property Get StartIndex() As Long
+       
+   
+    Property Get EndIndex() As Long
+  
+
+    
+
+End Interface

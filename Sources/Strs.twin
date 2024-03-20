@@ -5,7 +5,8 @@ Class Strs
     Attribute VB_Exposed = True
     '@IgnoreModule FunctionReturnValueDiscarded, IndexedDefaultMemberAccess
     Option Explicit
-    '@Folder("Strings")
+    Option Base 0
+    
     ' The strs class is for methods that process **strings**
     ' To convert to a string, see class 'Stringifier'
 
@@ -384,7 +385,7 @@ Class Strs
         Dim myReturn As String = ipString
     
         Dim myPair As Variant
-        For Each myPair In ipArgs.Value
+        For Each myPair In ipArgs.Items
         	' ignore any myPair that is not an array
             If Not VBA.IsArray(myPair) Then
             	Continue For

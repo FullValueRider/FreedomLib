@@ -1,1185 +1,543 @@
 Module TestVar
 
     Option Explicit
+    option base 0
     Option Private Module
 
-    Public myC As Collection
-    Public myUdt As TestUDT
-    Public myAL As ArrayList
-    Public myD As Dictionary
-    Public myQ As Queue
-    Public myStk As Stack
-    Public myH As cHashD
-    'Private myS As seqA
-    'Private myK As KvpA
-    #If twinbasic Then
-        'Do nothing
-    #Else
-
-
-        '@ModuleInitialize
-    Private Sub ModuleInitialize()
-        GlobalAssert
-        'this method runs once per module.
-        '    Set Assert = CreateObject("Rubberduck.AssertClass")
-        '    Set Fakes = CreateObject("Rubberduck.FakesProvider")
-    End Sub
-
-
-    '@ModuleCleanup
-    Private Sub ModuleCleanup()
-        'this method runs once per module.
-        '    Set Assert = Nothing
-        '    Set Fakes = Nothing
-    End Sub
-
-
-    '@TestInitialize
-    Private Sub TestInitialize()
-        'This method runs before every test in the module..
-    End Sub
-
-
-    '@TestCleanup
-    Private Sub TestCleanup()
-        'this method runs after every test in the module.
-    End Sub
-
-
-    #End If
-
+    Private myNArray() As Variant
+    Private myUArray As Variant  'assign array() in test
+    Private myPArray(0 To 5) As Variant
+    Private my3DArray(1 To 3, 2 To 4, 3 To 5) As Variant
+    Private myC As Collection
+    Private myUdt As TestUDT
+    Private myAL As ArrayList
+    Private myQ As Queue
+    Private myStk As Stack
+    Private myT As Treap
+    Private myH As cHashD
+    Private myD As Dictionary
+    Private myNothingObj As Collection
+    Private myArgs As Args
+    Private myTnode As TNode
     Public Type TestUDT
         x As Long
         y As Long
     End Type
-
-    Private Sub InitialiseTestEntities()
     
+    
+    Dim mympObject As PointXY
+    '[Description("Allows testing of IsMissing")]    
+    Private Function ReturnIsMissing(Optional ByRef ipItem As Variant) As Variant
+        Return ipItem
+    End Function
+    Private Sub InitialiseTestEntities()
+        
         myUdt.x = 42
         myUdt.y = 84
-    
+        Set myArgs = Args(10, 20, 30, 40, 50)
+        Set myTnode = TNode.Deb("Hello", 42, 0.9!)
+        
+        myUArray = Array()
+        
         Set myC = New Collection
         myC.Add 10
         myC.Add 20
         myC.Add 30
-    
+        
         Set myD = New Dictionary
         myD.Add "One", 10
         myD.Add "Two", 20
         myD.Add "Three", 30
-    
+        
         Set myQ = Queue()
         myQ.Enqueue 10
         myQ.Enqueue 30
         myQ.Enqueue 30
-    
+        
         Set myStk = Stack()
         myStk.Push 10
         myStk.Push 20
         myStk.Push 30
-    
+        
+        Set myT = Treap()
+        myT.Add "One", 10
+        myT.Add "Two", 20
+        myT.Add "Three", 30
+        
         Set myAL = New ArrayList
         myAL.Add 10
         myAL.Add 20
         myAL.Add 30
-    
+        
         Set myH = New cHashD
         myH.Add "One", 10
         myH.Add "Two", 20
         myH.Add "Three", 30
-    
+        
+        Set mympObject = PointXY(4, 2)
     End Sub
-
-
-    Public Sub VarTests()
-        Debug.Print "Var",
+    
+    
+      Public Sub VarTests()
+        
+        Debug.Print CurrentComponentName,
         InitialiseTestEntities
-        Test01_FName
-        Test02_VBAIsNotComplements
-    
-        ' ' Tests for Ids
-        Test03_NullIds
-        Test04_NothingIds
-        Test05_EmptyIds
-        Test06_ErrorIds
-        Test07_ByteIds
-        Test08_IntegerIds
-        Test09_LongIds
-        Test10_LongLongIds
-        Test11_SingleIds
-        Test12_DoubleIds
-        Test13_CurrencyIds
-        Test14_DecimalIds
-        Test15_DateIds
-        Test16_StringIds
-        Test17_UdtIds
-        Test18_ItemObjectIds
-        Test19_ArrayIds
-        Test20_StackIds
-        Test21_QueueIds
-        Test22_ArrayListIds
-        Test23_DictionaryIds
-        Test24_cHashDIds
-    
-        ' Tests for Holders
-        Test25_HolderIsIndexable
-        Test26_HolderItemsHolder
-        Test27_HolderContainer
-        Test28_HolderItemByIndex
-        'Test29_HolderMapper ' can't implement until we add seq and kvp classes.
-    
-        ' Tests for Group
-        Test30_GroupIsAdmin
-        Test31_GroupIsNumber
-        Test32_GroupIsBoolean
-        Test33_GroupIsString
-        ' no test for udt
-        Test34_GroupIsItemObject
-        Test35_GroupIsInitialisedArray
-        Test35_GroupIsItemByIndex1
-        Test36_GroupIsItemByIndex0
-        Test37_GroupIsItemByKey
-        Test38_GroupIsItemByToArray
+        Test01_IsObjectAndName
+       
+        
+        ' The following test methods that replace VBA IsXXX methods that are not type specific
+        Test02a_TypeInfo_IsArray_VBAReplacement
+        ' Test02b_TypeInfo_IsDate_VBAReplacement
+        ' Test02c_TypeInfo_IsEmpty_VBAReplacement
+        ' Test02d_TypeInfo_IsError_VBAReplacement
+        ' Test02e_TypeInfo_IsErrObject_VBAReplacement
+        
+        Test02f_TypeInfo_IsMissing_VBAReplacement
+        ' Test02g_TypeInfo_IsNothing_VBAReplacement
+        ' Test02h_TypeInfo_IsNull_VBAReplacement
+        Test02i_TypeInfo_IsNumeric_VBAReplacement
+        Test02j_TypeInfo_IsObject_VBAReplacement
+        
+        ' Tests for Ids and names
+        Test_Null_IdsAndNames
+        Test_Nothing_IdsAndNames
+        Test_Empty_IdsAndNames
+        Test_CVErr_IdsAndNames
+        Test_ErrObject_IdsAndNames
+        
+        Test_Boolean_IdsAndNames
+        Test_Byte_IdsAndNames
+        Test_Integer_IdsAndNames
+        Test_Long_IdsAndNames
+        Test_LongLong_IdsAndNames
+        
+        Test_Single_IdsAndNames
+        Test_Double_IdsAndNames
+        Test_Currency_IdsAndNames
+        Test_Decimal_IdsAndNames
+        Test_Date_IdsAndNames
+        
+        Test_String_IdsAndNames
+        Test_narray_IdsAndNames
+        Test_uarray_IdsAndNames
+        Test_parray_IdsAndNames_linear
+        Test_parray_IdsAndNames_3d
+        
+        Test_UserDefinedType_IdsAndNames
+        Test_mpObject_IdsAndNames
+        Test_ItemByIndex0_ArrayList
+        Test_ItemByIndex1_Args ' Args qualifies foritembyIndex1
+        Test_ItemByIndex1_Collection
+        ' need to add seq when they are installed
+        Test_ItemByKey_cHashD
+        Test_ItemByKey_Dictionary
+        Test_ItemByKey_Treap
+        ' Test_TNode_IdsAndNames
+        Test_mpObject_TNode
+        Test_ItemByToArray_Queue
+        Test_ItemByToArray_Stack
+        
         Debug.Print vbTab, vbTab, vbTab, "Testing completed"
 
+        'Test_Count
+        
     End Sub
 
 
     '@TestMethod("Var")
-    Private Sub Test01_FName()
+    Private Sub Test01_IsObjectAndName()
 
-        ''On error GoTo TestFail
-
+        ' on error goto TestFail
+    
         'Arrange:
-        '                                  0       1        2        3          4          5       6          7       8           9         10        11          12         13      14        15     16            17       18            19            20       21       22           23        
-        Dim myExpected As Variant = Array("null", "empty", "error", "nothing", "boolean", "byte", "integer", "long", "longlong", "single", "double", "currency", "decimal", "date", "string", "udt", "itemobject", "array", "collection", "dictionary", "queue", "stack", "arraylist", "chashd") ', "seq", "kvp")
-        Dim myResult As Variant: ReDim myResult(0 To 23)
-    
-        'Act:   
-      
-        myResult(0) = Var(Null).FName
-        myResult(1) = Var(Empty).FName
-        myResult(2) = Var(VBA.CVErr(42)).FName
-        myResult(3) = Var(Nothing).FName
-        myResult(4) = Var(VBA.CVar(True)).FName
-        myResult(5) = Var(VBA.CVar(VBA.CVar(VBA.CByte(42)))).FName
-        myResult(6) = Var(VBA.CVar(VBA.CInt(42))).FName
-        myResult(7) = Var(VBA.CVar(VBA.CLng(42))).FName
-        myResult(8) = Var(VBA.CVar(VBA.CLngLng(42))).FName
-        myResult(9) = Var(VBA.CVar(VBA.CSng(42))).FName
-        myResult(10) = Var(VBA.CVar(VBA.CDbl(42))).FName
-        myResult(11) = Var(VBA.CVar(VBA.CCur(42))).FName
-        myResult(12) = Var(VBA.CVar(VBA.CDec(42))).FName
-        myResult(13) = Var(VBA.CVar(VBA.CVDate(42))).FName
-        myResult(14) = Var(VBA.CVar("42")).FName
-        myResult(15) = "udt" ' can't pass UDT as variant Var(VBA.CVar(myUdt)).FName
-        myResult(16) = Var(PointXY(2, 4)).FName
-        myResult(17) = Var(Array(1, 2, 3, 4, 5)).FName
-        myResult(18) = Var(myC).FName
-        myResult(19) = Var(myD).FName
-        myResult(20) = Var(myQ).FName
-        myResult(21) = Var(myStk).FName
-        myResult(22) = Var(myAL).FName
-        myResult(23) = Var(myH).FName
-        ' tests for seq and kvp cannot be implemented yet not implmented
+        Dim myExpected As Variant = Array(True, "Var", "Var")
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(42)
+        With mycoll
+       
+            .Add VBA.IsObject(myVar)
+            .Add VBA.TypeName(myVar)
+            .Add myVar.TypeName
+        End With
+        myResult = mycoll.Items
         'Assert:
-    
+        
         Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
+    
     TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
+        On Error Resume Next
+    
         Exit Sub
     TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
+  
+    
     '@TestMethod("Var")
-    Private Sub Test02_VBAIsNotComplements()
+    Private Sub Test02a_TypeInfo_IsArray_VBAReplacement()
 
-        'On error GoTo TestFail
-
+        ' on error goto TestFail
+    
         'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, False, False, True, False)
-        Dim myResult As Variant: ReDim myResult(0 To 6)
+        Dim myExpected As Variant = Array(True, True, True, False, False, False)
+        Dim myResult As Variant: ReDim myResult(0 To 3)
+        Dim mycoll As Collection = New Collection
+        
+        Dim myVar1 As Var = Var(myPArray)
+        Dim myVar2 As Var = Var(myNArray)
+        Dim myVar3 As Var = Var(myUArray)
 
+        
         'Act:
-
-        myResult(0) = Var(Null).IsNotNull              ' False
-        myResult(1) = Var(Nothing).IsNothing           ' True
-        myResult(2) = Var(Nothing).IsNotNothing
-        myResult(3) = Var(Empty).IsNotEmpty
-        myResult(4) = Var(VBA.CVErr(42)).IsNotError
-        myResult(5) = Var(42).IsNotDate                ' Numbers are not dates but can be assigned to dates.
-        myResult(6) = Var(myC).IsNothing
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test03_NullIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Null, vbNull, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(Null).Id
-        myResult(1) = Var(Null).VBAId
-        myResult(2) = Var(Null).GroupId
-        myResult(3) = Var(Null).EntityId
-        myResult(4) = Var(Null).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-    '@TestMethod("Var")
-    Private Sub Test04_NothingIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Nothing, vbObject, e_Group.m_Admin, e_Entity.m_CompoundObject, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(Nothing).Id
-        myResult(1) = Var(Nothing).VBAId
-        myResult(2) = Var(Nothing).GroupId
-        myResult(3) = Var(Nothing).EntityId
-        myResult(4) = Var(Nothing).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-    '@TestMethod("Var")
-    Private Sub Test05_EmptyIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Empty, vbEmpty, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(Empty).Id
-        myResult(1) = Var(Empty).VBAId
-        myResult(2) = Var(Empty).GroupId
-        myResult(3) = Var(Empty).EntityId
-        myResult(4) = Var(Empty).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test06_ErrorIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_CVErr, vbError, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVErr(42)).Id
-        myResult(1) = Var(VBA.CVErr(42)).VBAId
-        myResult(2) = Var(VBA.CVErr(42)).GroupId
-        myResult(3) = Var(VBA.CVErr(42)).EntityId
-        myResult(4) = Var(VBA.CVErr(42)).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test07_ByteIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Byte, vbByte, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CByte(42)).Id
-        myResult(1) = Var((VBA.CVar(VBA.CByte(42)))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CByte(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CByte(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CByte(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test08_IntegerIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Integer, vbInteger, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CInt(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CInt(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CInt(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CInt(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CInt(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test09_LongIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Long, vbLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CLng(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CLng(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CLng(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CLng(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CLng(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test10_LongLongIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_LongLong, vbLongLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CLngLng(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CLngLng(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CLngLng(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CLngLng(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CLngLng(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test11_SingleIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Simple, vbSingle, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CSng(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CSng(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CSng(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CSng(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CSng(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test12_DoubleIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Double, vbDouble, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CDbl(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CDbl(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CDbl(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CDbl(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CDbl(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test13_CurrencyIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Currency, vbCurrency, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CCur(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CCur(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CCur(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CCur(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CCur(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test14_DecimalIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Decimal, vbDecimal, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CDec(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CDec(42))).VBAId
-        myResult(2) = Var(VBA.CVar(VBA.CDec(42))).GroupId
-        myResult(3) = Var(VBA.CVar(VBA.CDec(42))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CDec(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test15_DateIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Date, vbDate, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(VBA.CVar(VBA.CDate(42))).Id
-        myResult(1) = Var(VBA.CVar(VBA.CDate(42))).VBAId
-        myResult(2) = Var((VBA.CVar(VBA.CDate(42)))).GroupId
-        myResult(3) = Var((VBA.CVar(VBA.CDate(42)))).EntityId
-        myResult(4) = Var(VBA.CVar(VBA.CDate(42))).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test16_StringIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_String, vbString, e_Group.m_String, e_Entity.m_Holder, e_Holder.m_Indexable)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var("42").Id
-        myResult(1) = Var("42").VBAId
-        myResult(2) = Var("42").GroupId
-        myResult(3) = Var("42").EntityId
-        myResult(4) = Var("42").HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test17_UdtIds()
-
-        ''On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_UDT, vbUserDefinedType, e_Group.m_UserDefinedType, e_Entity.m_Compound, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myUdt).Id  ' does this line generate an error
-        myResult(1) = Var(myUdt).VBAId
-        myResult(2) = Var(myUdt).GroupId
-        myResult(3) = Var(myUdt).EntityId
-        myResult(4) = Var(myUdt).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test18_ItemObjectIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_ItemObject, vbObject, e_Group.m_ItemObject, e_Entity.m_CompoundObject, e_Holder.m_IsNotHolder)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(PointXY(2, 4)).Id
-        myResult(1) = Var(PointXY(2, 4)).VBAId
-        myResult(2) = Var(PointXY(2, 4)).GroupId
-        myResult(3) = Var(PointXY(2, 4)).EntityId
-        myResult(4) = Var(PointXY(2, 4)).HolderId
-    
-        'Assert:
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test19a_NArrayIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_NArray, vbArray, e_Group.m_Array, e_Entity.m_Holder, e_Holder.m_Items)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-        Dim myA() As Variant
-        myResult(0) = Var(myA).Id
-        myResult(1) = Var(myA).VBAId
-        myResult(2) = Var(myA).GroupId
-        myResult(3) = Var(myA).EntityId
-        myResult(4) = Var(myA).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-    '@TestMethod("Var")
-    Private Sub Test19b_UArrayIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_UArray, vbArray, e_Group.m_Array, e_Entity.m_Holder, e_Holder.m_Items)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-        Dim myA As Variant = Array()
-        myResult(0) = Var(myA).Id
-        myResult(1) = Var(myA).VBAId
-        myResult(2) = Var(myA).GroupId
-        myResult(3) = Var(myA).EntityId
-        myResult(4) = Var(myA).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-    
-    '@TestMethod("Var")
-    Private Sub Test19c_PArrayIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_PArray, vbArray, e_Group.m_Array, e_Entity.m_Holder, e_Holder.m_Indexable + e_Holder.m_Items)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-        Dim myA As Variant = Array(1, 2, 3, 4, 5)
-        myResult(0) = Var(myA).Id
-        myResult(1) = Var(myA).VBAId
-        myResult(2) = Var(myA).GroupId
-        myResult(3) = Var(myA).EntityId
-        myResult(4) = Var(myA).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-    '@TestMethod("Var")
-    Private Sub Test20_StackIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Stack, vbObject, e_Group.m_ItemByToArray, e_Entity.m_Holder, e_Holder.m_Items + e_Holder.m_Container)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myStk).Id
-        myResult(1) = Var(myStk).VBAId
-        myResult(2) = Var(myStk).GroupId
-        myResult(3) = Var(myStk).EntityId
-        myResult(4) = Var(myStk).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test21_QueueIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Queue, vbObject, e_Group.m_ItemByToArray, e_Entity.m_Holder, e_Holder.m_Items + e_Holder.m_Container)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myQ).Id
-        myResult(1) = Var(myQ).VBAId
-        myResult(2) = Var(myQ).GroupId
-        myResult(3) = Var(myQ).EntityId
-        myResult(4) = Var(myQ).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test22_ArrayListIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_ArrayList, vbObject, e_Group.m_ItemByIndex0, e_Entity.m_Holder, e_Holder.m_Indexable + e_Holder.m_Items + e_Holder.m_Container + e_Holder.m_ItemByUnBoundKey)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myAL).Id
-        myResult(1) = Var(myAL).VBAId
-        myResult(2) = Var(myAL).GroupId
-        myResult(3) = Var(myAL).EntityId
-        myResult(4) = Var(myAL).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test23_DictionaryIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_Dictionary, vbObject, e_Group.m_ItemByKey, e_Entity.m_Holder, e_Holder.m_Indexable + e_Holder.m_Items + e_Holder.m_Container)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myD).Id
-        myResult(1) = Var(myD).VBAId
-        myResult(2) = Var(myD).GroupId
-        myResult(3) = Var(myD).EntityId
-        myResult(4) = Var(myD).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test24_cHashDIds()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(e_FId.m_cHashD, vbObject, e_Group.m_ItemByKey, e_Entity.m_Holder, e_Holder.m_Indexable + e_Holder.m_ItemByBoundKey + e_Holder.m_Items + e_Holder.m_Container)
-        Dim myResult As Variant: ReDim myResult(0 To 4)
-
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        myResult(0) = Var(myH).Id
-        myResult(1) = Var(myH).VBAId
-        myResult(2) = Var(myH).GroupId
-        myResult(3) = Var(myH).EntityId
-        myResult(4) = Var(myH).HolderId
-
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test25_HolderIsIndexable()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, True, False, False, True, True, False, True, False, True, False, True, False, True, False, False, True, False, True, True, False)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Nothing, True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
+        With mycoll
+            .Add myVar1.IsArray
+            .Add myVar2.IsArray
+            .Add myVar3.IsArray
+            .Add myVar1.IsNotArray
+            .Add myVar2.IsNotArray
+            .Add myVar3.IsNotArray
+        End With
         
-            myResult(myIndex) = Var(myItem).isIndexable
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
+        myResult = mycoll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
         
-            myResult(myIndex) = Var(myItem).IsNotIndexable
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-        Next
-    
         Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test26_HolderItemsHolder()
-
-        'On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Nothing, True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-        
-            myResult(myIndex) = Var(myItem).IsItems
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-            myResult(myIndex) = Var(myItem).IsNotItems
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-        Next
     
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-
     TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test27_HolderContainer()
-
-        ''On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, True, False, True, False, True, False, True, False, True, False)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Nothing, True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-        
-            myResult(myIndex) = Var(myItem).IsContainer
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-            myResult(myIndex) = Var(myItem).IsNotContainer
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-        Next
+        On Error Resume Next
     
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
         Exit Sub
     TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test28_HolderItemByIndex()
-
-        ''On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, False, True, True, False, False, True, False, True, True, False)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Nothing, True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-        
-            myResult(myIndex) = Var(myItem).IsItemByUnboundKey
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotItemByUnboundKey
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-        Next
     
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
     ' '@TestMethod("Var")
-    ' Private Sub Test29_HolderMapper()
+    ' Private Sub Test02b_TypeInfo_IsDate_VBAReplacement()
 
-    '     ''On error GoTo TestFail
-
-    '     'Arrange:
-    '     Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, False, True, True, False, False, True, False, True, True, False)
-    '     Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-    '     Dim myA As Variant: myA = Array(Nothing, True, 42, vba.cvar(vba.CVDate(42), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-    '     'Act:  Again we need to sort The result SeqC to get the matching array
-
-    '     Dim myItem As Variant
-    '     Dim myIndex As Long = 0
-    '     For Each myItem In myA
-        
-    '         myResult(myIndex) = Var().IsItemByIndex(myItem)
-    '         'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-    '         myIndex += 1
-
-    '         myResult(myIndex) = Var().IsNotItemByIndex(myItem)
-    '         'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-    '         myIndex += 1
-        
-    '     Next
+    '     ' on error goto TestFail
     
-    '     Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(False, True, False, True, False, True)
+    '     Dim myResult As Variant: ReDim myResult(0 To 5)
+    '     Dim myCOll As Collection = New Collection
+    '     'Act:
+    '     With myCOll
+    '         .add myVar.IsDate(42)
+    '         .add myVar.IsDate(CVDate(42))
+    '         .add myVar.IsDate("Hello")
+    '         .add myVar.IsNotDate("Hello")
+    '         .add myVar.IsNotDate(CVDate(42))
+    '         .add myVar.IsNotDate(42)
+    '     End With
+    '     myResult = myCOll.Items
+        
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
     ' TestExit:
     '     '@Ignore UnhandledOnErrorResumeNext
-    '     'On error Resume Next
+    '     On Error Resume Next
+    
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
+    
+    
+    ' '@TestMethod("Var")
+    ' Private Sub Test02c_TypeInfo_IsEmpty_VBAReplacement()
 
+    '     ' on error goto TestFail
+    
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(True, False, True, False)
+    '     Dim myResult As Variant: ReDim myResult(0 To 3)
+    '     Dim myColl As Collection = New Collection
+    '     'Act:
+    '     With myColl
+    '         .add myVar.IsEmpty(Empty)
+    '         .add myVar.IsEmpty("Hello")
+    '         .add myVar.IsNotEmpty("Hello")
+    '         .add myVar.IsNotEmpty(Empty)
+    '     End With
+    '     myResult = myColl.Items
+        
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
+    
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
+    
+    
+    ' '@TestMethod("Var")
+    ' Private Sub Test02d_TypeInfo_IsError_VBAReplacement()
+
+    '     ' on error goto TestFail
+    
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(True, False, True, False)
+    '     Dim myResult As Variant: ReDim myResult(0 To 3)
+    '     Dim mycoll As Collection = New Collection
+    '     'Act:
+    '     With mycoll
+    '         .add myVar.IsError(VBA.CVErr(42))
+    '         .add myVar.IsError("Hello")
+    '         .add myVar.IsNotError("Hello")
+    '         .add myVar.IsNotError(VBA.CVErr(42))
+    '     End With
+    '     myResult = mycoll.Items
+        
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
+    
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
+    
+   
+    ' '@TestMethod("Var")
+    ' Private Sub Test02e_TypeInfo_IsErrObject_VBAReplacement()
+
+    '     ' on error goto TestFail
+    
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(True, False, True, False)
+    '     Dim myResult As Variant: ReDim myResult(0 To 3)
+    '     Dim mycoll As Collection = New Collection
+        
+    '     'Act:
+    '     With mycoll
+    '         .add myVar.IsErrObject(Err)
+    '         .add myVar.IsErrObject("Hello")
+    '         .add myVar.IsNotErrObject("Hello")
+    '         .add myVar.IsNotErrObject(Err)
+    '     End With
+        
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
+    
     '     Exit Sub
     ' TestFail:
     '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
     '     Resume TestExit
     ' End Sub
 
+ 
     '@TestMethod("Var")
-    Private Sub Test30_GroupIsAdmin()
+    Private Sub Test02f_TypeInfo_IsMissing_VBAReplacement()
 
-        ''On error GoTo TestFail
-
-        'Arrange:
-        Dim myExpected As Variant = Array(True, False, True, False, True, False, True, False, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-        
-            myResult(myIndex) = Var(myItem).IsAdmin
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotAdmin
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-        
-        Next
+        ' on error goto TestFail
     
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-
+        'Arrange:
+        Dim myExpected As Variant = Array(True, False, False, False, True, True)
+        Dim myResult As Variant
+        Dim myColl As Collection = New Collection
+        'Act:
+        Dim myVar1 As Var = Var(ReturnIsMissing)
+        Dim myVar2 As Var = Var(42)
+        Dim myVar3 As Var = Var("Hello")
+        
+        With myColl
+            
+            .Add myVar1.IsMissing
+            .Add myVar2.IsMissing
+            .Add myVar3.IsMissing
+            .Add myVar1.IsNotMissing
+            .Add myVar2.IsNotMissing
+            .Add myVar3.IsNotMissing
+            
+        End With
+        myResult = myColl.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
     TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+   
+    ' '@TestMethod("Var")
+    ' Private Sub Test02g_TypeInfo_IsNothing_VBAReplacement()
 
+    '     ' on error goto TestFail
+    
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(True, False, False, True, False, True)
+    '     Dim myResult As Variant: ReDim myResult(0 To 5)
+    '     Dim myColl As Collection = New Collection
+    '     'Act:
+    '     With myColl
+    '         .add myVar.IsNothing(myNothingObj)
+    '         .add myVar.IsNothing(myC)
+    '         .add myVar.IsNothing("Hello")
+    '         .add myVar.IsNotNothing(myC)
+    '         .add myVar.IsNotNothing(myNothingObj)
+    '         .add myVar.IsNotNothing("Hello")
+    '     End With
+    '     myResult = myColl.Items
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
+    
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
+    
+   
+    ' '@TestMethod("Var")
+    ' Private Sub Test02h_TypeInfo_IsNull_VBAReplacement()
+
+    '     ' on error goto TestFail
+    
+    '     'Arrange:
+    '     Dim myExpected As Variant = Array(True, False, False, True, False, True)
+    '     Dim myResult As Variant: ReDim myResult(0 To 5)
+    '     Dim myColl As Collection = New Collection
+    '     'Act:
+    '     With myColl
+    '         .add myVar.IsNull(Null)
+    '         .add myVar.IsNull(myC)
+    '         .add myVar.IsNull("Hello")
+    '         .add myVar.IsNotNull(myC)
+    '         .add myVar.IsNotNull(Null)
+    '         .add myVar.IsNotNull("Hello")
+    '     End With
+    '     myResult = myColl.Items
+        
+    '     'Assert:
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
+    
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test02i_TypeInfo_IsNumeric_VBAReplacement()
+        
+        
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = Array(True, True, False, False, False, True)
+        Dim myResult As Variant: ReDim myResult(0 To 5)
+        Dim myColl As Collection = New Collection
+        Dim myVar1 As Var = Var(42)
+        Dim myVar2 As Var = Var("42")
+        Dim myVar3 As Var = Var("Hello")
+        'Act:
+        With myColl
+        	
+            .Add myVar1.IsNumeric
+            .Add myVar2.IsNumeric
+            .Add myVar3.IsNumeric
+            
+            .Add myVar1.IsNotNumeric
+            .Add myVar2.IsNotNumeric
+            .Add myVar3.IsNotNumeric
+         
+        End With
+        myResult = myColl.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print IsNumeric(42), IsNumeric("42"), IsNumeric("Hello")
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    ' .add myVar.IsNotObject(myC)
+    '@TestMethod("Var")
+    Private Sub Test02j_TypeInfo_IsObject_VBAReplacement()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        ' Remember that flib defines 'Nothing' as a 'simple' not an object
+        Dim myExpected As Variant = Array(True, False, False, False, False, True, True, True)
+        Dim myResult As Variant: ReDim myResult(0 To 7)
+        Dim myColl As Collection = New Collection
+        
+        Dim myVar1 As Var = Var(myC)
+        Dim myVar2 As Var = Var("Hello")
+        Dim myVar3 As Var = Var(Nothing)
+        Dim myVar4 As Var = Var(Err)
+        'Act:
+        With myColl
+            .Add myVar1.IsObject
+            .Add myVar2.IsObject
+            .Add myVar3.IsObject
+            .Add myVar4.IsObject
+            .Add myVar1.IsNotObject
+            .Add myVar2.IsNotObject
+            .Add myVar3.IsNotObject
+            .Add myVar4.IsNotObject
+        End With
+        myResult = myColl.Items
+        
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
         Exit Sub
     TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
@@ -1187,348 +545,1882 @@ Module TestVar
     End Sub
 
     '@TestMethod("Var")
-    Private Sub Test31_GroupIsNumber()
+    Private Sub Test_Null_IdsAndNames()
 
-    ''On error GoTo TestFail
-
-    'Arrange:
-    Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, True, False, True, False, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True)
-    Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-    Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-    'Act:  Again we need to sort The result SeqC to get the matching array
-
-    Dim myItem As Variant
-    Dim myIndex As Long = 0
-    For Each myItem In myA
-        
-        myResult(myIndex) = Var(myItem).IsNumber
-        'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-        myIndex += 1
-
-        myResult(myIndex) = Var(myItem).IsNotNumber
-        'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-        myIndex += 1
-        
-    Next
-    
-    Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-
-TestExit:
-    '@Ignore UnhandledOnErrorResumeNext
-    'On error Resume Next
-
-    Exit Sub
-TestFail:
-    Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-    Resume TestExit
-End Sub
-
-    '@TestMethod("Var")
-    Private Sub Test32_GroupIsBoolean()
-
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, True, False, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsBoolean
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotBoolean
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Null, vbNull, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "null", "Null", "admin", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim myCOll As Collection = New Collection
+        Dim myVar As Var = Var(Null)
+       
+        'Act: 
+        With myCOll
+            .Add myVar.IsNull
+            .Add myVar.IsNotNull
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-        
-        TestExit:
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = myCOll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
-
+    
     '@TestMethod("Var")
-    Private Sub Test33_GroupIsString()
+    Private Sub Test_Nothing_IdsAndNames()
 
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Nothing, vbObject, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "nothing", "Nothing", "admin", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim myVar As Var = Var(Nothing)
+        'Act: 
+        Dim myCOll As Collection = New Collection
+        With myCOll
+            .Add myVar.IsNothing
+            .Add myVar.IsNotNothing
+           
                 
-            myResult(myIndex) = Var(myItem).IsString
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotString
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
         
-        TestExit:
+        myResult = myCOll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
+    
     '@TestMethod("Var")
-    Private Sub Test34_GroupIsItemObject()
+    Private Sub Test_Empty_IdsAndNames()
 
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, False, True, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Empty, vbEmpty, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "empty", "Empty", "admin", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim myCOll As Collection = New Collection
+        Dim myVar As Var = Var(Empty)
+        'Act: 
+        With myCOll
+        
+            .Add myVar.IsEmpty
+            .Add myVar.IsNotEmpty
                 
-            myResult(myIndex) = Var(myItem).IsItemObject
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotString
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = myCOll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
         
-        TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
-        Exit Sub
-        TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
-
-
-    '@TestMethod("Var")
-    Private Sub Test35_GroupIsInitialisedArray()
-
-        ''On error GoTo TestFail
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
     
-        'Arrange
-'                                         0      1     2      3     4      5     6      7     8      9     10     11    12     13    14     15    16     17    18     19    20     21    22    23     24     25    26     27    28     29    30     31    32     33
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, False, True, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        '                               0     2        4      6              8     10  12              14       16             18       20                    22   24   26   28     30   32 
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVDate(42), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsInitialisedArray
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotInitialisedArray
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
-            
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-        
-        TestExit:
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
 
-    '@TestMethod("Var")
-    Private Sub Test35_GroupIsItemByIndex1()
 
-        ''On error GoTo TestFail
+    '@TestMethod("Var")
+    Private Sub Test_CVErr_IdsAndNames()
+
+        ' on error goto TestFail
     
         'Arrange:
-        '                                  0     1     2      3     4      5     6      7     8      9     10     11    12     13    14     15    16     17    18     19    20     21    22    23     24     25    26     27    28     29    30     31    32     33
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, False, True, False, True, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        '                               0     2        4      6              8     10  12                        14       16             18       20                    22   24   26   28     30   32 
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsItemByIndex1
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).ISNotItemByIndex1
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_CVErr, vbError, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "cverr", "Error", "admin", "simple", "isnotholder" _
+            )
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
+        Dim myResult As Variant: ReDim myResult(0 To 9)
+        Dim myColl As Collection = New Collection
+        Dim myVar As Var = Var(CVErr(42))
+        'Act: 
+        With myColl
+            
+            .Add myVar.IsError
+            .Add myVar.IsNotError
+                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = myColl.Items
         
-        TestExit:
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ErrObject_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_ErrObject, vbDataObject, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "errobject", "Error", "admin", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim MYcOLL As Collection = New Collection
+        Dim myVar As Var = Var(Err)
+        'Act: 
+        With MYcOLL
+            .Add myVar.IsErrObject
+            .Add myVar.IsNotErrObject
+                    
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = MYcOLL.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    
+    '@TestMethod("Var")
+    Private Sub Test_Boolean_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Boolean, vbBoolean, e_Group.m_Boolean, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "boolean", "Boolean", "boolean", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant: ReDim myResult(0 To 9)
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(True)
+        'Act: 
+        With mycoll
+            .Add myVar.IsBoolean
+            .Add myVar.IsNotBoolean
+
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
 
     '@TestMethod("Var")
-    Private Sub Test36_GroupIsItemByIndex0()
+    Private Sub Test_Byte_IdsAndNames()
 
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        '                                  0     1     2      3     4      5     6      7     8      9     10     11    12     13    14     15    16     17    18     19    20     21    22     23    24     25    26     27    28     29    30     31    32    33
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        '                               0     2        4      6              8     10  12              14       16             18       20                    22   24   26   28     30   32 
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsItemByIndex0
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotItemByIndex0
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Byte, vbByte, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "byte", "Byte", "number", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CByte(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsByte
+            .Add myVar.IsNotByte
+                            
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
-        
-        TestExit:
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
+    
+    
     '@TestMethod("Var")
-    Private Sub Test37_GroupIsItemByKey()
+    Private Sub Test_Integer_IdsAndNames()
 
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        '                                  0     1     2      3     4      5     6      7     8      9     10     11    12     13    14     15    16     17    18     19    20     21    22     23    24    25     26    27     28     29    30     31    32    33
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, True, False, False, True, False, True, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        '                               0     2        4      6              8     10  12              14       16             18       20                    22   24   26   28     30   32 
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
-
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsItemByKey
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotItemByKey
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Integer, vbInteger, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "integer", "Integer", "number", "simple", "isnotholder" _
+            )
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CInt(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsInteger
+            .Add myVar.IsNotInteger
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
         
-        TestExit:
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
-
+    
+    
     '@TestMethod("Var")
-    Private Sub Test38_GroupIsItemByToArray()
+    Private Sub Test_Long_IdsAndNames()
 
-        ''On error GoTo TestFail
+        ' on error goto TestFail
     
         'Arrange:
-        '                                  0     1     2      3     4      5     6      7     8      9     10     11    12     13    14     15    16     17    18     19    20     21    22     23    24     25    26     27    28    29     30    31     32     33
-        Dim myExpected As Variant = Array(False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, False, True, True, False, True, False, False, True)
-        Dim myResult As Variant: ReDim myResult(LBound(myExpected) To UBound(myExpected))
-        '                               0     2        4      6              8     10  12              14       16             18       20                    22   24   26   28     30   32 
-        Dim myA As Variant: myA = Array(Null, Nothing, Empty, VBA.CVErr(42), True, 42, VBA.CVar(VBA.CVDate(42)), "Hello", PointXY(4, 2), Array(), Array(1, 2, 3, 4, 5), myC, myD, myH, myStk, myQ, myAL)
-        'Act:  Again we need to sort The result SeqC to get the matching array
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Long, vbLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "long", "Long", "number", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CLng(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsLong
+            .Add myVar.IsNotLong
 
-        Dim myItem As Variant
-        Dim myIndex As Long = 0
-        For Each myItem In myA
-                
-            myResult(myIndex) = Var(myItem).IsItemByToArray
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-
-            myResult(myIndex) = Var(myItem).IsNotItemByToArray
-            'Debug.Print myIndex, myExpected(myIndex), myResult(myIndex)
-            myIndex += 1
-                
-        Next
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
             
-        Assert.Strict.SequenceEquals myExpected, myResult, CurrentProcedureName
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+       
+        End With
         
-        TestExit:
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
         '@Ignore UnhandledOnErrorResumeNext
-        'On error Resume Next
-        
+        On Error Resume Next
+    
         Exit Sub
-        TestFail:
+    TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
         Resume TestExit
     End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_LongLong_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_LongLong, vbLongLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "longlong", "LongLong", "number", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CLngLng(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsLongLong
+            .Add myVar.IsNotLonglong
+
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_Single_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    1&, 1&, 1&, False, True, _
+                    e_Id.m_Single, vbSingle, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                    "single", "Single", "number", "simple", "isnotholder" _
+                )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CSng(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsSingle
+            .Add myVar.IsNotSingle
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+    
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_Double_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Double, vbDouble, e_Group.m_Number, e_Entity.m_Simple, _
+                e_Holder.m_IsNotHolder, "double", "Double", "number", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CDbl(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsDouble
+            .Add myVar.isNotDouble
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+       
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_Currency_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Currency, vbCurrency, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "currency", "Currency", "number", "simple", "isnotholder" _
+            )
+        
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CCur(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsCurrency
+            .Add myVar.IsNotCurrency
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+            
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+        
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_Decimal_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    1&, 1&, 1&, False, True, _
+                    e_Id.m_Decimal, vbDecimal, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                    "decimal", "Decimal", "number", "simple", "isnotholder" _
+                )
+                
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(VBA.CDec(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsDecimal
+            .Add myVar.IsNotDecimal
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+    End With
+    myResult = mycoll.Items
+        
+    'Assert:
+    ' Debug.Print
+    ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+    ' Debug.Print VBA.Join(myResult, Chars.tbComma)'Assert:
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_Date_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_Date, vbDate, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
+                "date", "Date", "number", "simple", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(CDate(42))
+        'Act: 
+        With mycoll
+            .Add myVar.IsDate
+            .Add myVar.IsNotDate
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+       
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_String_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                5&, 1&, 5&, True, False, _
+                e_Id.m_String, vbString, e_Group.m_Holder, e_Entity.m_Simple, e_Holder.m_String, _
+                "string", "String", "holder", "simple", "string" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var("Hello")
+        'Act: 
+        With mycoll
+            .Add myVar.IsString
+            .Add myVar.IsNotString
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_narray_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                -1&, 0&, -1&, False, True, _
+                e_Id.m_NArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder, _
+                "narray", "Array", "notinit", "array", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myNArray)
+        'Act: 
+        With mycoll
+            .Add myVar.IsNArray
+            .Add myVar.IsNotNArray
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_uarray_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                -1&, 0&, -1&, False, True, _
+                e_Id.m_UArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder, _
+                "uarray", "Array", "notinit", "array", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myUArray)
+        'Act: 
+        With mycoll
+            .Add myVar.IsUArray
+            .Add myVar.IsNotUArray
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+            
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    
+    '@TestMethod("Var")
+    Private Sub Test_parray_IdsAndNames_linear()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                6&, 0&, 5&, True, False, _
+                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_Array, e_Holder.m_Array, _
+                "parray", "Array", "holder", "array", "array" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myPArray)
+        'Act: 
+        With mycoll
+            .Add myVar.IsPArray
+            .Add myVar.IsNotPArray
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+            
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_parray_IdsAndNames_3d()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                /* all elements */ 27&, /*no first or last index for all elements */ _
+                /* first rank */ 3&, 1&, 3&, _
+                /* second rank */ 3&, 2&, 4&, _
+                /* third rank */ 3&, 3&, 5&, _
+                True, False, _
+                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_Array, e_Holder.m_Array, _
+                "parray", "Array", "holder", "array", "array" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(my3DArray)
+        'Act: 
+        With mycoll
+            .Add myVar.IsPArray
+            .Add myVar.IsNotPArray
+                                
+            .Add myVar.Count
+            
+            
+            .Add myVar.Count(1)
+            .Add myVar.FirstIndex(1)
+            .Add myVar.LastIndex(1)
+            
+            .Add myVar.Count(2)
+            .Add myVar.FirstIndex(2)
+            .Add myVar.LastIndex(2)
+            
+            .Add myVar.Count(3)
+            .Add myVar.FirstIndex(3)
+            .Add myVar.LastIndex(3)
+            
+            
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+            
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_UserDefinedType_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, -1&, False, True, _
+                e_Id.m_UDT, vbUserDefinedType, e_Group.m_UDT, e_Entity.m_UserDefinedType, e_Holder.m_IsNotHolder, _
+                "udt", "UDT", "udt", "udt", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myUdt)
+        'Act: 
+        With mycoll
+            .Add myVar.IsUDT
+            .Add myVar.IsNotUDT
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_mpObject_IdsAndNames()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                1&, 1&, 1&, False, True, _
+                e_Id.m_mpObject, vbObject, e_Group.m_mpObject, e_Entity.m_Object, e_Holder.m_IsNotHolder, _
+                "mpobject", "mpObject", "mpobject", "object", "isnotholder" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(mympObject)
+        'Act: 
+        With mycoll
+            .Add myVar.IsmpObject
+            .Add myVar.IsNotmpObject
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+            
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByIndex0_ArrayList()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                3&, 0&, 2&, True, False, _
+                e_Id.m_ArrayList, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex0, _
+                "arraylist", "ArrayList", "holder", "object", "itembyindex0" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myvar As Var = Var(myAL)
+        
+        'Act: 
+        With mycoll
+            .Add myvar.IsItemByIndex0
+            .Add myvar.IsNotItemByIndex0
+                                
+            .Add myvar.Count
+            .Add myvar.FirstIndex
+            .Add myvar.LastIndex
+            .Add myvar.HoldsItems
+            .Add myvar.LacksItems
+         
+            .Add myvar.Id(e_VarGenre.m_FLib)
+            .Add myvar.Id(e_VarGenre.m_VBA)
+            .Add myvar.Id(e_VarGenre.m_Group)
+            .Add myvar.Id(e_VarGenre.m_Entity)
+            .Add myvar.Id(e_VarGenre.m_Holder)
+            
+            .Add myvar.Name(e_VarGenre.m_FLib)
+            .Add myvar.Name(e_VarGenre.m_VBA)
+            .Add myvar.Name(e_VarGenre.m_Group)
+            .Add myvar.Name(e_VarGenre.m_Entity)
+            .Add myvar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByIndex1_Args()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                5&, 1&, 5&, True, False, _
+                e_Id.m_Args, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1, _
+                "args", "Args", "holder ", "object", "itembyindex1" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myArgs)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByIndex1
+            .Add myVar.IsNotItemByIndex1
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+         
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        myResult = mycoll.Items
+        
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByIndex1_Collection()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                3&, 1&, 3&, True, False, _
+                e_Id.m_Collection, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1, _
+                "collection", "Collection", "holder", "object", "itembyindex1" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myC)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByIndex1
+            .Add myVar.IsNotItemByIndex1
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+            
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByKey_cHashD()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    3&, 1&, 3&, True, False, _
+                    e_Id.m_cHashD, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
+                    "chashd", "cHashD", "holder", "object", "itembykey" _
+                )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myH)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByKey
+            .Add myVar.IsNotItemByKey
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+    
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByKey_Dictionary()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    3&, 1&, 3&, True, False, _
+                    e_Id.m_Dictionary, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
+                    "dictionary", "Dictionary", "holder", "object", "itembykey" _
+                )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myD)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByKey
+            .Add myVar.IsNotItemByKey
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_mpObject_TNode()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    1&, 1&, 1&, False, True, _
+                    e_Id.m_TNode, vbObject, e_Group.m_mpObject, e_Entity.m_Object, e_Holder.m_IsNotHolder, _
+                    "tnode", "TNode", "mpObject", "object", "isnotholder" _
+                )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myTnode)
+        'Act: 
+        With mycoll
+            .Add myVar.IsmpObject
+            .Add myVar.IsNotmpObject
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByKey_Treap()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+                ( _
+                    True, False, _
+                    3&, 1&, 3&, True, False, _
+                    e_Id.m_Treap, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
+                    "treap", "Treap", "holder", "object", "itembykey" _
+                )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myT)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByKey
+            .Add myVar.IsNotItemByKey
+
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByToArray_Queue()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                3&, 0&, 2&, True, False, _
+                e_Id.m_Queue, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray, _
+                "queue", "Queue", "holder", "object", "itembytoarray" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myvAR As Var = Var(myQ)
+        'Act: 
+        With mycoll
+            .Add myvAR.IsItemByToArray
+            .Add myvAR.IsNotItemByToArray
+                                
+            .Add myvAR.Count
+            .Add myvAR.FirstIndex
+            .Add myvAR.LastIndex
+            .Add myvAR.HoldsItems
+            .Add myvAR.LacksItems
+        
+            .Add myvAR.Id(e_VarGenre.m_FLib)
+            .Add myvAR.Id(e_VarGenre.m_VBA)
+            .Add myvAR.Id(e_VarGenre.m_Group)
+            .Add myvAR.Id(e_VarGenre.m_Entity)
+            .Add myvAR.Id(e_VarGenre.m_Holder)
+            
+            .Add myvAR.Name(e_VarGenre.m_FLib)
+            .Add myvAR.Name(e_VarGenre.m_VBA)
+            .Add myvAR.Name(e_VarGenre.m_Group)
+            .Add myvAR.Name(e_VarGenre.m_Entity)
+            .Add myvAR.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Var")
+    Private Sub Test_ItemByToArray_Stack()
+
+        ' on error goto TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant = _
+            Array _
+            ( _
+                True, False, _
+                3&, 0&, 2&, True, False, _
+                e_Id.m_Stack, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray, _
+                "stack", "Stack", "holder", "object", "itembytoarray" _
+            )
+        Dim myResult As Variant:
+        Dim mycoll As Collection = New Collection
+        Dim myVar As Var = Var(myStk)
+        'Act: 
+        With mycoll
+            .Add myVar.IsItemByToArray
+
+            .Add myVar.IsNotItemByToArray
+
+                                
+            .Add myVar.Count
+            .Add myVar.FirstIndex
+            .Add myVar.LastIndex
+            .Add myVar.HoldsItems
+            .Add myVar.LacksItems
+        
+            .Add myVar.Id(e_VarGenre.m_FLib)
+            .Add myVar.Id(e_VarGenre.m_VBA)
+            .Add myVar.Id(e_VarGenre.m_Group)
+            .Add myVar.Id(e_VarGenre.m_Entity)
+            .Add myVar.Id(e_VarGenre.m_Holder)
+            
+            .Add myVar.Name(e_VarGenre.m_FLib)
+            .Add myVar.Name(e_VarGenre.m_VBA)
+            .Add myVar.Name(e_VarGenre.m_Group)
+            .Add myVar.Name(e_VarGenre.m_Entity)
+            .Add myVar.Name(e_VarGenre.m_Holder)
+        End With
+        
+        myResult = mycoll.Items
+    
+        'Assert:
+        ' Debug.Print
+        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+    
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
 
 End Module

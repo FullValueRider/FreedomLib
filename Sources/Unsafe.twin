@@ -1,9 +1,27 @@
-[ Description ("Module Unsafe is a where the behind the scenes memory jiggery pokery stuff is located if not available in [_HiddenModule] ") ]
+[Description("Module Unsafe is a where the behind the scenes memory jiggery pokery stuff is located if not available in [_HiddenModule] ")]
 Module Unsafe
-	
+    Option Base 0
+    
+    
+    Public Enum e_HResult
+        m_DISP_E_BADINDEX = &H8002000B
+        m_ACCESSDENIED = &H80070005         ' Access denied.
+        m_FAIL = &H80004005                 ' Unspecified error.
+        m_INVALIDARG = &H80070057           ' Invalid parameter value.
+        m_OUTOFMEMORY = &H8007000E          ' Out of memory.
+        m_POINTER = &H80004003              ' Null was passed incorrectly for a pointer value.
+        m_UNEXPECTED = &H8000FFFF           ' Unexpected condition.
+        m_OK = &H0                          ' Success.
+        m_FALSE = &H1                       ' Success.
+    
+    End Enum
+    
+' VT enums are defined  in Module Unsafe as we cannot define public constants in a class, otherwise they would be in class Sys.
+' ToDo: Consider converting VT constants to an enum.  Probably will need a dictionary based enum so that enum values can be encoded as Integers
+' VT enums are the first field of the Variant structure an are represented as Integers in VBA. In c++ they are short unsigned intgers
 ' From  https://en.wikipedia.org/wiki/Variant_type_(COM)
 '       https://learn.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
-'       earn.microsoft.com/en-us/openspecs/windows_protocols/ms-oaut/3fe7db9f-5803-4dc4-9d14-5425d3f5461f
+'       Learn.microsoft.com/en-us/openspecs/windows_protocols/ms-oaut/3fe7db9f-5803-4dc4-9d14-5425d3f5461f
 '
  '        Propvariant Type                                           Hex         Dec    Propvariant Member   TypeName    Data bytes          C and C++ type	                Comment
 
@@ -101,11 +119,19 @@ Public Const FADF_RESERVED                          As Integer = &HF008
     'https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-variantcopyind
     Public Declare PtrSafe Function VariantCopyInd Lib "oleaut32" (Dst As Any, Src As Any) As Long
     
+    
+    Public Declare PtrSafe Function SafeArrayCreate Lib "oleaut32" (ByVal ipVarType As Integer, ByVal ipDims As Long, ByVal ipBoundsAddr As LongPtr) As LongPtr
+    Public Declare PtrSafe Sub SafeArrayDestroy Lib "oleaut32" (ByVal ipSafeSAAddr As LongPtr)
+    Public Declare PtrSafe Function SafeArrayGetDim Lib "oleaut32" (ByVal ipSafeSAAddr As LongPtr) As Long
     Public Declare PtrSafe Function SafeArrayLock Lib "oleaut32" (src As LongPtr) As LongPtr
     Public Declare PtrSafe Function SafeArrayUnlock Lib "oleaut32" (src As LongPtr) As LongPtr
-    Public Declare PtrSafe Function SafeArrayCreate Lib "oleaut32" (ByVal ipVarType As Integer, ByVal ipDims As Long, ByVal ipBoundsAddr As LongPtr) As LongPtr
-    Public Declare PtrSafe Sub SafeArrayDestroy Lib "oleaut32" (ByVal ipSafeArrayPtr As LongPtr)
-        
+    
+    
+    Public Declare PtrSafe Sub SafeArrayPutElement Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipIndexes As LongPtr, ByVal ipData As LongPtr)
+    Public Declare PtrSafe Sub SafeArrayGetElement Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipIndexes As LongPtr, ByVal opData As LongPtr)
+    
+    Public Declare PtrSafe Sub SafeArrayGetVartype Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipLong As LongPtr)
+    Public Declare PtrSafe Sub SafeArrayGetLocks Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipLong As LongPtr)
     ' from modHashD
     '    Public Type SAFEARRAY1D
     '      cDims                 As Integer
@@ -123,18 +149,16 @@ Public Const FADF_RESERVED                          As Integer = &HF008
     '    Public Declare PtrSafe Function VariantCopyInd Lib "oleaut32" (Dst As Any, Src As Any) As Long
         Public Declare PtrSafe Function CharLowerBuffW& Lib "user32" (lpsz As Any, ByVal cchLength&)
     
-    Public Enum e_SAOffsetsOneRank
+    Public Enum e_SAOffsets
         m_cDims = 0
         m_fFeature = 2
         m_cbElements = 4
         m_cLocks = 8
-        m_pvdata = 12
+        
 # If win64 Then
-        m_cElements1 = 20
-        m_lLBounds1  = 24
+        m_pvdata = 16
 #Else
-        m_cElements1 = 16
-        m_lLBounds1 = 20
+        m_pvData = 12
 #End If
     End Enum
 
@@ -143,15 +167,15 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         m_Reserved1 = 2
         m_Reserved2 = 4
         m_Reserved3 = 6
-        m_DataField1 = 8  ' datafield1 is a longptr
+        m_Data1 = 8  ' datafield1 is a longptr
     #If Win64 Then
     	m_DataField2 = 16 ' datafield2 is a long ptr
     #Else
-        m_DataField2 = 12
+        m_Data2 = 12
     #End If
     End Enum
     
-    Public Type SABaseUDT
+    Public Type SAudt
         cDims                                   As Integer
         fFeatures                               As Integer
         cbElements                              As Long
@@ -159,7 +183,7 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         pvData                                  As LongPtr
     End Type
     
-    Public Type SAWithOneRankUDT
+    Public Type SAIDudt
         cDims                                   As Integer
         fFeatures                               As Integer
         cbElements                              As Long
@@ -169,18 +193,24 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         lLbound1D                               As Long
     End Type
     
-    Public Type SA12UDT
+    Public Type SA3udt
         cDims                                   As Integer
         fFeatures                               As Integer
         cbElements                              As Long
         cLocks                                  As Long
         pvData                                  As LongPtr
-        RankCount1                              As Long
-        Rank1                                   As Long
-        RankCount2                              As Long
-        Rank2                                   As Long
-        RankCount3                              As Long
-        Rank3                                   As Long
+        
+        Elements1                               As Long
+        Lbound1                                   As Long
+        
+        Elements2                               As Long
+        Lbound2                                   As Long
+        
+        Elements3                               As Long
+        Lbound3                                   As Long
+        
+    End Type
+    
         ' RankCount4                              As Long
         ' Rank4                                   As Long
         ' RankCount5                              As Long
@@ -197,8 +227,9 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         ' Rank10                                  As Long
         ' RankCount11                             As Long
         ' Rank11                                  As Long
-        ' cElement12                              As Long
-    End Type
+        ' Rankcount12                             As Long
+        ' Rank12                                  As Long
+   
 
     Public Type SABound                         ' offsets
         cElements                               As Long                 ' 0
@@ -212,131 +243,583 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         Reserved1                               As Integer      ' reserved
         Reserved2                               As Integer      ' reserved
         Reserved3                               As Integer      ' reserved
-        Data1                                   As LongPtr
-        Data2                                   As LongPtr      ' Value or pointer to the actual value
+        Data1                                   As LongPtr      ' Value or pointer to the actual value
+        Data2                                   As LongPtr
     End Type
 
+    Public Type vBuffer
+        V01 As Variant
+        V02 As Variant
+        v03 As Variant
+        v04 As Variant
+        v05 As Variant
+        v06 As Variant
+        v07 As Variant
+        v08 As Variant
+        v09 As Variant
+        v10 As Variant
+        v11 As Variant
+        v12 As Variant
+        v13 As Variant
+        v14 As Variant
+        v15 As Variant
+        v16 As Variant
+        v17 As Variant
+        v18 As Variant
+        v19 As Variant
+        v20 As Variant
+        v21 As Variant
+        v22 As Variant
+        v23 As Variant
+        v24 As Variant
+        
+    End Type
+    
+    Public Type intBuf
+        int01 As Integer
+        int02 As Integer
+        int03 As Integer
+        int04 As Integer
+        int05 As Integer
+        int06 As Integer
+        int07 As Integer
+        int08 As Integer
+        int09 As Integer
+        int10 As Integer
+        int11 As Integer
+        int12 As Integer
+        int13 As Integer
+        int14 As Integer
+        int15 As Integer
+        int16 As Integer
+    End Type
+    
+    Public Type lngBuf
+        lng01 As Long
+        lng02 As Long
+        lng03 As Long
+        lng04 As Long
+        lng05 As Long
+        lng06 As Long
+        lng07 As Long
+        lng08 As Long
+        lng09 As Long
+        lng10 As Long
+        lng11 As Long
+        lng12 As Long
+        lng13 As Long
+        lng14 As Long
+        lng15 As Long
+        lng16 As Long
+    End Type
     
     Public Const myPtrSize                      As Long = lenB(Of LongPtr)
     Public Const myVarSize                      As Long = lenb(Of Variant)
     Public Const mySaSize                       As Long = -1                ' lenb doesn't seem to support udt here
     
     'Private Host                                As Variant
-    [ Description ("Returns the address of the safearray struct from a variant.  Dereferences if array is VT_BYREF.  Safe for 32 AND 64 bit modes ") ]
-    Public Function ArrayPtr(ByRef ipArray As Variant) As LongPtr
-     
-        ' copy the VT of the array (i.e. the VT field of the Variant.)
-        Dim myVT As Integer = 0
-        [_HiddenModule].vbaCopyBytes VBA.len(Of Integer), ByVal VarPtr(myVT), ByVal VarPtr(ipArray) + e_VarOffsets.m_Vt
-    
-        ' Get the initial address from DataField1 of the s.Host variant
-        Dim myArrayPtr As LongPtr = 0
-        'copy the address field
-        [_HiddenModule].vbaCopyBytes myPtrSize, ByVal VarPtr(myArrayPtr), ByVal VarPtr(ipArray) + e_VarOffsets.m_DataField1
-    
-        ' check if we need to dereference myArrayPtr
-        If myVT And Unsafe.VT_BYREF Then
-            ' Datafield1 is a pointer to the pointer to the safe array
-        [_HiddenModule].vbaCopyBytes myPtrSize, ByVal VarPtr(myArrayPtr), ByVal myArrayPtr
+    [Description("Returns the address of the safearray struct from a variant.  Dereferences if array is VT_BYREF.  Safe for 32 AND 64 bit modes ")]
+    Public Function SAAddr(ByRef ipArray As Variant) As LongPtr
+        
+        Dim mySAAddr As LongPtr = VarData1(ipArray)
+        ' if VT has VT_BYREF is true then Data1 is a pointer to a pointer to a safearray, so we deref the pointer in DAta1
+        If (VarVt(ipArray) And Unsafe.VT_BYREF) = Unsafe.VT_BYREF Then
+            
+            vbaCopyBytes LenB(Of LongPtr), ByVal VarPtr(mySAAddr), ByVal mySAAddr
     
         End If
     
-        Return myArrayPtr
+        Return mySAAddr
         
     End Function
     
-    [ Description ("returns pvData of the provided array") ]
-    Public Function ArrayDataPtr(ByRef ipArray As Variant) As LongPtr
-    	Dim myPtr As LongPtr
-        vbaCopyBytes LenB(Of LongPtr), ByVal VarPtr(myPtr), ByVal ArrayPtr(ipArray) + e_SAOffsetsOneRank.m_pvdata
-    	Return myPtr
-    End Function
+    ' [Description("returns pvData of the provided array")]
+    '  Public Function ArrayDataPtr(ByRef ipArray As Variant) As LongPtr
+    ' 	Dim mySAUDT As SAudt
+    '     vbaCopyBytes LenB(Of SAudt), ByVal VarPtr(mySAUDT), ByVal (SAAddr(ipArray))
+    ' 	Return mySAUDT.pvData
+    ' End Function
     
-    
+    [Description("Applies a safearraylock")]
     Public Sub LockArray(ByRef ipArray As Variant)
-       SafeArrayLock ByVal ArrayPtr(ipArray)
+       SafeArrayLock ByVal SAAddr(ipArray)
     End Sub
     
+    [Description("Removes a safearray lock")]
     Public Sub UnlockArray(ByRef ipArray As Variant)
-        SafeArrayUnlock ByVal ArrayPtr(ipArray)
+        SafeArrayUnlock ByVal SAAddr(ipArray)
     End Sub
    
-    Public Function ArrayDims(ByRef ipArray As Variant) As Long
-    	Allow.InitialisedArray ipArray, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+    ' Public Function ArrayDims(ByRef ipArray As Variant) As Long
         
-        Dim myPtr As LongPtr = 0
-        myPtr = ArrayPtr(ipArray)
-        Dim myDims As Integer
-        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myDims), ByVal myPtr
-        Return myDims
-    End Function
-    
-    Public Function VarVt(ByRef ipVariant As Variant) As Integer
-    	Dim myVarVt As LongPtr = 0
-        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myVarVt), ByVal VarPtr(ipVariant)
-        Return myVarVt
-    End Function
-    
-    Public Function ArrayFeaturesFlags(ByRef ipArray As Variant) As Integer
-    	Dim mySAptr As LongPtr = 0
-        mySAptr = ArrayPtr(ipArray)
-        Dim myFeatures As Integer = 0
-        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myFeatures), ByVal mySAptr + e_SAOffsetsOneRank.m_fFeature
-        Return myFeatures
-    End Function
-    
-    
-    Public Sub Test()
-    	Dim myA As Variant
-        Dim myVal As Long = 100
-        ReDim myA(1 To 10, 5 To 9)
-        Dim myX As Long
-        For myX = 1 To 10
-        	Dim myY As Long
-            For myY = 5 To 9
-            	myA(myX, myY) = myVal
-                myVal += 100
-            Next
-        Next
+    '     If Not Contract.IsPArray(ipArray, CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName, ipreportbackaction:=m_Continue) Then
+    '         Return -1
+    '     End If
         
-        ' Dim myItem As Variant
-        ' For Each myItem In myA
-        ' 	Debug.Print myItem
-        ' Next
-        Dim myHost As Variant = 0
-        Bind myHost, myA
-        myA(2, 7) = 42
-        myHost(10) = 42
+    '     Return SafeArrayGetDim(Unsafe.SAAddr(ipArray))
+    ' 	' 
+        
+    '     ' Dim myPtr As LongPtr = 0
+    '     ' myPtr = SAAddr(ipArray)
+    '     ' Dim myDims As Integer
+    '     ' vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myDims), ByVal myPtr
+    '     ' Return myDims
+    ' End Function
+    
+    /* 
+        The properties below rely on the ability of twinbasic to access a parameter specified as a udt
+        as a UDT when the actual value provided for the parameter is of Type LongPtr
+    */
+    ' Vt                                      As Integer      ' describes the type of value stored in the variant
+    ' Reserved1                               As Integer      ' reserved
+    ' Reserved2                               As Integer      ' reserved
+    ' Reserved3                               As Integer      ' reserved
+    ' Data1                                   As LongPtr      ' Value or pointer to the actual value
+    ' Data2    
+    Public Property Get VarVt(ByRef ipVar As Variant) As Integer
+        Return GetVarVt(VarPtr(ipVar))
+    End Property
+    
+    Private Function GetVarVt(ByRef ipVarAddress As VariantUdt) As Integer
+        Return ipVarAddress.Vt
+    End Function
+    
+    Public Property Let VarVt(ByRef ipVar As Variant, ByRef ipVT As Integer)
+        SetVarVt VarPtr(ipVar), ipVT
+    End Property
+    
+    Private Sub SetVarVt(ByRef ipVarAddr As VariantUdt, ByRef ipVT As Integer)
+        ipVarAddr.Vt = ipVT
     End Sub
+    
+    
+    Public Property Get VarRes1(ByRef ipVar As Variant) As Integer
+        Return GetVarRes1(VarPtr(ipVar))
+    End Property
+    
+    Private Function GetVarRes1(ByRef ipVarAddress As VariantUdt) As Integer
+        Return ipVarAddress.Reserved1
+    End Function
+    
+    Public Property Let VarRes1(ByRef ipVar As Variant, ByRef ipRes1 As Integer)
+        SetVarRes1 VarPtr(ipVar), ipRes1
+    End Property
+    
+    Private Sub SetVarRes1(ByRef ipVarAddr As VariantUdt, ByRef ipRes1 As Integer)
+        ipVarAddr.Reserved1 = ipRes1
+    End Sub
+    
+    
+    Public Property Get VarRes2(ByRef ipVar As Variant) As Integer
+        Return GetVarRes2(VarPtr(ipVar))
+    End Property
+    
+    Private Function GetVarRes2(ByRef ipVarAddress As VariantUdt) As Integer
+        Return ipVarAddress.Reserved1
+    End Function
+    
+    Public Property Let VarRes2(ByRef ipVar As Variant, ByRef ipRes2 As Integer)
+        SetVarRes2 VarPtr(ipVar), ipRes2
+    End Property
+    
+    Private Sub SetVarRes2(ByRef ipVarAddr As VariantUdt, ByRef ipRes2 As Integer)
+        ipVarAddr.Reserved2 = ipRes2
+    End Sub
+    
+    
+    Public Property Get VarRes3(ByRef ipVar As Variant) As Integer
+        Return GetVarRes3(VarPtr(ipVar))
+    End Property
+    
+    Private Function GetVarRes3(ByRef ipVarAddress As VariantUdt) As Integer
+        Return ipVarAddress.Reserved1
+    End Function
+    
+    Public Property Let VarRes3(ByRef ipVar As Variant, ByRef ipRes3 As Integer)
+        SetVarRes3 VarPtr(ipVar), ipRes3
+    End Property
+    
+    Private Sub SetVarRes3(ByRef ipVarAddr As VariantUdt, ByRef ipRes3 As Integer)
+        ipVarAddr.Reserved1 = ipRes3
+    End Sub
+    
+    /*
+        We use longptr for Datafield1 and datafield 2 as these values change to 8 bytes in 64 bit mode
+    */
+    Public Property Get VarData1(ByRef ipVar As Variant) As LongPtr
+        Return GetVarData1(VarPtr(ipVar))
+    End Property
+    
+    Private Function GetVarData1(ByRef ipVarAddress As VariantUdt) As LongPtr
+        Return ipVarAddress.Data1
+    End Function
+    
+    Public Property Let VarData1(ByRef ipVar As Variant, ByRef ipData1 As LongPtr)
+        SetVarData1 VarPtr(ipVar), ipData1
+    End Property
+    
+    Private Sub SetVarData1(ByRef ipVarAddr As VariantUdt, ByRef ipData1 As LongPtr)
+        ipVarAddr.Reserved1 = ipData1
+    End Sub
+    
+    
+    
+    Public Property Get VarData2(ByRef ipVar As Variant) As LongPtr
+        Return GetVarData2(VarPtr(ipVar))
+    End Property
+     
+    Private Function GetVarData2(ByRef ipVarAddress As VariantUdt) As LongPtr
+        Return ipVarAddress.Data2
+    End Function
+    
+    Public Property Let VarData2(ByRef ipVar As Variant, ByRef ipData2 As LongPtr)
+        SetVarData2 VarPtr(ipVar), ipData2
+    End Property
+    
+    Private Sub SetVarData2(ByRef ipVarAddr As VariantUdt, ByRef ipData2 As LongPtr)
+        ipVarAddr.Reserved1 = ipData2
+    End Sub
+   
+    ' cDims                                   As Integer
+    ' fFeatures                               As Integer
+    ' cbElements                              As Long
+    ' cLocks                                  As Long
+    ' pvData                                  As LongPtr
+    ' Public Property Get SADims(ByRef ipArray As Variant) As Integer
+    '     Dim myDims As Integer
+    '     vbaCopyBytes LenB(Of Integer), VarPtr(myDims), Unsafe.SAAddr(ipArray)
+    '     Return myDims
+    ' End Property
+    
+    Public Property Get SADims(ByRef ipArray As Variant) As Integer
+        Return GetSADims(SAAddr(ipArray))
+    End Property
+    
+    Public Function GetSADims(ByRef ipAddress As SAudt) As Integer
+        Return ipAddress.cDims
+    End Function
+    
+    Public Property Let SADims(ByRef ipArray As Variant, ByRef ipDims As Integer)
+        SetSADims SAAddr(ipArray), ipDims
+    End Property
+    
+    Private Sub SetSADims(ByRef ipAddress As SAudt, ByRef ipDims As Integer)
+        ipAddress.cDims = ipDims
+    End Sub
+    
+    
+    Public Property Get SAFeatures(ByRef ipArray As Variant) As Integer
+        Return GetSAFeatures(SAAddr(ipArray))
+    End Property
+    
+    Public Function GetSAFeatures(ByRef ipAddress As SAudt) As Integer
+        Return ipAddress.fFeatures
+    End Function
+    
+    Public Property Let SAFeatures(ByRef ipArray As Variant, ByRef ipFeatures As Integer)
+        SetSAFeatures SAAddr(ipArray), ipFeatures
+    End Property
+    
+    Private Sub SetSAFeatures(ByRef ipAddress As SAudt, ByRef ipFeatures As Integer)
+        ipAddress.cDims = ipFeatures
+    End Sub
+    
+    
+    Public Property Get SAElements(ByRef ipArray As Variant) As Long
+        Return GetSAElements(SAAddr(ipArray))
+    End Property
+    
+    Public Function GetSAElements(ByRef ipAddress As SAudt) As Long
+        Return ipAddress.cbElements
+    End Function
+    
+    
+    Public Property Let SAElements(ByRef ipArray As Variant, ByRef ipElements As Long)
+        SetSAElements SAAddr(ipArray), ipElements
+    End Property
+    
+    Private Sub SetSAElements(ByRef ipAddress As SAudt, ByRef ipElements As Long)
+        ipAddress.cbElements = ipElements
+    End Sub
+    ' Public Property Get SAFeatures(ByRef iparray As Variant) As Integer
+    '     vbaCopyBytes LenB(Of Integer), ByVal VarPtr(SAFeatures), ByVal SAAddr(iparray) + e_SAOffsets.m_fFeature
+    '     Return SAFeatures
+    ' End Property
+    
+    ' Property Let SAFeatures(ByRef iparray As Variant, ByRef ipFeatures As Integer)
+    '     vbaCopyBytes LenB(Of Integer), ByVal Unsafe.SAAddr(iparray) + e_SAOffsets.m_fFeature, ByVal VarPtr(ipFeatures)
+    ' End Property
+    
+                                   
+    ' Public Property Get SAElements(ByRef iparray As Variant) As Long
+    '     vbaCopyBytes LenB(Of Long), ByVal VarPtr(SAElements), ByVal SAAddr(iparray) + e_SAOffsets.m_cbElements
+    '     Return SAElements
+    ' End Property
+    
+    ' Property Let SAElements(ByRef iparray As Variant, ByRef ipElements As Long)
+    '     vbaCopyBytes LenB(Of Long), ByVal Unsafe.SAAddr(iparray) + e_SAOffsets.m_cbElements, ByVal VarPtr(ipElements)
+    ' End Property
+    
+    
+    ' Public Property Get SALocks(ByRef iparray As Variant) As Long
+    '     vbaCopyBytes LenB(Of Long), ByVal VarPtr(SALocks), ByVal SAAddr(iparray) + e_SAOffsets.m_fFeature
+    '     Return SALocks
+    ' End Property
+    
+    ' Property Let SALocks(ByRef iparray As Variant, ByRef ipLocks As Long)
+    '     vbaCopyBytes LenB(Of Long), ByVal Unsafe.SAAddr(iparray) + e_SAOffsets.m_fFeature, ByVal VarPtr(ipLocks)
+    ' End Property
+
+    Public Property Get SALocks(ByRef ipArray As Variant) As Long
+        Return GetSALocks(SAAddr(ipArray))
+    End Property
+    
+    Public Function GetSALocks(ByRef ipAddress As SAudt) As Long
+        Return ipAddress.cLocks
+    End Function
+    
+    Public Property Let SALocks(ByRef ipArray As Variant, ByRef ipLocks As Long)
+        SetSALocks SAAddr(ipArray), ipLocks
+    End Property
+    
+    Private Sub SetSALocks(ByRef ipAddress As SAudt, ByRef ipLOcks As Long)
+        ipAddress.cLocks = ipLOcks
+    End Sub
+    
+    
+    Public Property Get SApvDAta(ByRef ipArray As Variant) As LongPtr
+        Return GetSApvData(SAAddr(ipArray))
+    End Property
+    
+    Public Function GetSApvData(ByRef ipAddress As SAudt) As LongPtr
+        Return ipAddress.pvData
+    End Function
+    
+    Public Property Let SApvDAta(ByRef ipArray As Variant, ByRef ippvData As Long)
+        SetSALocks SAAddr(ipArray), ippvData
+    End Property
+    
+    Private Sub SetSApvData(ByRef ipAddress As SAudt, ByRef ippvData As Long)
+        ipAddress.cLocks = ippvData
+    End Sub
+    
+    
+    
+'    Property Get SADataPtr(ByRef ipArray As Variant) As LongPtr
+'        Dim mySAAddr As LongPtr = Unsafe.SAAddr(ipArray)
+'         vbaCopyBytes LenB(Of LongPtr), ByVal VarPtr(SADataPtr), ByVal mySAAddr + e_SAOffsets.m_pvData
+'     End Property
+    
+'     Property Let SADataPtr(ByRef ipArray As Variant, ByRef ipDataPtr As LongPtr)
+'         Dim mySaAddr As LongPtr = Unsafe.SAAddr(ipArray)
+'          vbaCopyBytes LenB(Of LongPtr), ByVal mySaAddr + e_SAOffsets.m_pvData, ByVal VarPtr(ipDataPtr)
+'     End Property
+
+    /*
+        Notw: the var type is supposed to be stoerrd in the top two bytes of clocks
+        but vba may store it in the -4 offset
+        https://stackoverflow.com/questions/18784470/where-is-safearray-var-type-stored
+    */
+    Property Get SAVarType(ByRef ipArray As Variant) As Integer
+        SafeArrayGetVartype ByVal SAAddr(ipArray), ByVal VarPtr(SAVarType)
+        Return SAVarType
+    End Property
+        
+    Property Let SAVarType(ByRef ipArray As Variant, ipVarType As Integer)
+        vbaCopyBytes LenB(Of Integer), ByVal Unsafe.SAAddr(ipArray) + e_SAOffsets.m_cLocks, ByVal VarPtr(ipVarType)
+   End Property
+
     
     Public Sub Bind(ByRef ipHost As Variant, ByRef ipArray As Variant)
     	
-        Dim myHostBackup As VariantUdt
-        Dim ipHostvariant As VariantUdt
+    '     Dim myHostBackup As VariantUdt
+    '     Dim ipHostvariant As VariantUdt
         
        
         
-        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(myHostBackup), ByVal VarPtr(ipHost)
-        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHost), ByVal VarPtr(ipArray)
-        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
-       'Dim mySAstruct As LongPtr = ArrayDataPtr(ipArray)
-        Dim myClone As SA12UDT
-        ' we know that we have two dims in ipArray
-        Dim mysize As Long = LenB(Of SABaseUDT) + LenB(Of Long) * 4
-        vbaCopyBytes mysize, ByVal VarPtr(myClone), ByVal ArrayPtr(ipHost)
+    '     vbaCopyBytes LenB(Of Variant), ByVal VarPtr(myHostBackup), ByVal VarPtr(ipHost)
+    '     vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHost), ByVal VarPtr(ipArray)
+    '     vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
+    '    'Dim mySAstruct As LongPtr = ArrayDataPtr(ipArray)
+    '     Dim myClone As SA12udt
+    '     ' we know that we have two dims in ipArray
+    '     Dim mysize As Long = LenB(Of SAudt) + LenB(Of Long) * 4
+    '     vbaCopyBytes mysize, ByVal VarPtr(myClone), ByVal SAAddr(ipHost)
         
-        ' update the clone to be a 1 dimension array
-        myClone.cDims = 1%
-        myClone.RankCount1 = 50&
-        myClone.Rank1 = 1
+    '     ' update the clone to be a 1 dimension array
+    '     myClone.cDims = 1%
+    '     myClone.RankCount1 = 50&
+    '     myClone.Rank1 = 1
         
-        ' now we transplant datafield1 of host
-        Dim mycloneptr As LongPtr = VarPtr(myClone)
-        Dim myHostptr As LongPtr = VarPtr(ipHost)
-        Dim myHostDatafield1ptr As LongPtr = myHostptr + e_VarOffsets.m_DataField1
+    '     ' now we transplant datafield1 of host
+    '     Dim mycloneptr As LongPtr = VarPtr(myClone)
+    '     Dim myHostptr As LongPtr = VarPtr(ipHost)
+    '     Dim myHostDatafield1ptr As LongPtr = myHostptr + e_VarOffsets.m_DataField1
         
-        vbaCopyBytes LenB(Of LongPtr), ByVal myHostDatafield1ptr, ByVal VarPtr(mycloneptr)
-        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
+    '     vbaCopyBytes LenB(Of LongPtr), ByVal myHostDatafield1ptr, ByVal VarPtr(mycloneptr)
+    '     vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
     End Sub
+    
+    ' cDims                                   As Integer
+    ' fFeatures                               As Integer
+    ' cbElements                              As Long
+    ' cLocks                                  As Long
+    ' pvData                                  As LongPtr
+    
+    Public Sub ReportSA(ByRef ipArray As Variant)
+        Debug.Print "Address", Hex(SAAddr(ipArray))
+        Debug.Print "Dims", SADims(ipArray)
+        Dim myFeatures As Long = SAFeatures(ipArray)
+        Debug.Print "fFeatures        ", Hex(myFeatures)
+    
+        Debug.Print "FADF_Auto        ", Hex(&H01), (myFeatures And &H0001) > 0
+        Debug.Print "FADF_Static      ", Hex(&H02), (myFeatures And &H0002) > 0
+
+        Debug.Print "FADF_Embedded    ", Hex(&H04), (myFeatures And &H0004) > 0
+        Debug.Print "FADF_FixedSize   ", Hex(&H10), (myFeatures And &H0010) > 0
+        Debug.Print "FADF_Record      ", Hex(&H20), (myFeatures And &H0020) > 0
+        Debug.Print "FADF_HaveIID     ", Hex(&H40), (myFeatures And &H0040) > 0
+
+        Debug.Print "FADF_HaveVarType ", Hex(&H80), (myFeatures And &H0080) > 0
+        Debug.Print "FADF_BSTR        ", Hex(&H100), (myFeatures And &H0100) > 0
+        Debug.Print "FADF_UNKNOwn     ", Hex(&H200), (myFeatures And &H0200) > 0
+
+        Debug.Print "FADF_Dispath     ", Hex(&H400), (myFeatures And &H0400) > 0
+        Debug.Print "FADF_Variant     ", Hex(&H800), (myFeatures And &H0800) > 0
+        Debug.Print "FADF_Reserved    ", Hex(&H08), (myFeatures And &H0008) > 0
+        
+        Debug.Print "cbElements       ", SAElements(ipArray)
+        Debug.Print "clocks           ", Hex(SALocks(ipArray))
+        Debug.Print "pvData           ", Hex(SApvDAta(ipArray))
+    End Sub
+    
+    
+    Public Sub populatevbuffer(ByRef ipBuffer As vBuffer, ByRef ipValue As Variant)
+        With ipBuffer
+            .V01 = ipValue
+            .V02 = ipValue
+            .v03 = ipValue
+            .v04 = ipValue
+            .v05 = ipValue
+            .v06 = ipValue
+            .v07 = ipValue
+            .v08 = ipValue
+            .v09 = ipValue
+            .v10 = ipValue
+            .v11 = ipValue
+            .v12 = ipValue
+            .v13 = ipValue
+            .v14 = ipValue
+            .v15 = ipValue
+            .v16 = ipValue
+            ' .v17 = ipValue
+            ' .v18 = ipValue
+            ' .v19 = ipValue
+            ' .v20 = ipValue
+            ' .v21 = ipValue
+            ' .v22 = ipValue
+            ' .v23 = ipValue
+            ' .v24 = ipValue
+        End With
+    End Sub
+    
+    
+    Sub PrintVBuf(ByRef ipvBuffer As vBuffer)
+        With ipvBuffer
+            Debug.Print .V01,
+            Debug.Print .V02,
+            Debug.Print .v03,
+            Debug.Print .v04,
+            Debug.Print .v05,
+            Debug.Print .v06,
+            Debug.Print .v07,
+            Debug.Print .v08,
+            Debug.Print .v09,
+            Debug.Print .v11,
+            Debug.Print .v12,
+            Debug.Print .v13,
+            Debug.Print .v14,
+            Debug.Print .v15,
+            Debug.Print .v16,
+        End With
+    End Sub
+    
+    Sub PrintintBuf(ByRef ipIntBuffer As intBuf)
+        With ipIntBuffer
+            Debug.Print .int01,
+            Debug.Print .int02,
+            Debug.Print .int03,
+            Debug.Print .int04,
+            Debug.Print .int05,
+            Debug.Print .int06,
+            Debug.Print .int07,
+            Debug.Print .int08,
+            Debug.Print .int09,
+            Debug.Print .int11,
+            Debug.Print .int12,
+            Debug.Print .int13,
+            Debug.Print .int14,
+            Debug.Print .int15,
+            Debug.Print .int16,
+        End With
+    End Sub
+    Public Sub InspectIntBuf(ByRef ipIntBuf As intBuf)
+        
+        Stop
+    End Sub
+    
+    Public Sub InspectvBuff(ByRef vbuffer As vBuffer)
+        
+        Stop
+    End Sub
+    
+    Public Sub InspectlngBuff(ByRef lngbuf As lngBuf)
+        Stop
+        
+    End Sub
+    
+    Public Sub ReportHResult(ByRef ipErr As e_HResult, ByRef ipLoc As String)
+        Dim myErrText As String
+        Select Case ipErr
+            
+            Case e_HResult.m_DISP_E_BADINDEX:           myErrText = "The specified index Is Not valid."
+            Case e_HResult.m_INVALIDARG:                myErrText = "One of the arguments Is Not valid."
+            Case e_HResult.m_OUTOFMEMORY:               myErrText = "Memory could Not be allocated For the element."
+                
+            
+        End Select
+        
+        Err.Raise 17 + vbObjectError, _
+            ipLoc, _
+            myErrText
+    End Sub
+    
+    Public Function Success(ByRef ipErr As e_HResult, ByRef ipLoc As String) As Boolean
+        Dim myErrText As String
+        Select Case ipErr
+            Case e_HResult.m_OK:                            Return True
+            Case e_HResult.m_FALSE:                         Return True
+            Case e_HResult.m_DISP_E_BADINDEX:               myErrText = "The specified index Is Not valid."
+            Case e_HResult.m_INVALIDARG:                    myErrText = "One of the arguments Is Not valid."
+            Case e_HResult.m_OUTOFMEMORY:                myErrText = "Memory could Not be allocated For the element."
+        End Select
+        
+        Err.Raise 17 + vbObjectError, _
+            ipLoc, _
+            myErrText
+        
+    End Function
+    
+    Public Function Failed(ByRef ipErr As e_HResult, ByRef ipLoc As String) As Boolean
+        Dim myErrText As String
+        Select Case ipErr
+            Case e_HResult.m_OK:                            Return False
+            Case e_HResult.m_FALSE:                         Return False
+            Case e_HResult.m_DISP_E_BADINDEX:               Return True
+            Case e_HResult.m_INVALIDARG:                    Return True
+            Case e_HResult.m_OUTOFMEMORY:                   Return True
+        End Select
+      
+    End Function
     
 End Module

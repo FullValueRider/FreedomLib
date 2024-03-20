@@ -7,10 +7,15 @@ Class cHashD
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = False
     Attribute VB_Exposed = False
+    
+    
     Option Explicit 'cHashD, Olaf Schmidt in August 2016 (enhanced about mixed, variable KeyTypes and Remove-functions in 2020)
     ' from https://www.vbforums.com/showthread.php?834515-Simple-and-fast-lightweight-HashList-Class-(no-APIs)
     ' with remove version
     ' updated in line with post 53
+    
+    Option Base 0
+    
     Private Declare PtrSafe Sub BindArray Lib "kernel32" Alias "RtlMoveMemory" (PArr() As Any, pSrc As LongPtr, Optional ByVal CB As Long = lenB(Of LongPtr))
     Private Declare PtrSafe Function VariantCopy Lib "oleaut32" (Dst As Any, Src As Any) As Long
     Private Declare PtrSafe Function VariantCopyInd Lib "oleaut32" (Dst As Any, Src As Any) As Long

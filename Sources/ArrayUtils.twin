@@ -1,0 +1,188 @@
+Module ArrayUtils
+
+	
+    [Description("Returns a Paramarray as an array of longs after checking the the values are numbers. ")]  'but with the values in reverse order??
+    Public Function Idx(ParamArray ipArrayAddress() As Variant) As Long()
+        Dim myCodeLoc As String = "FreedomLib.FBase.ArrayInfo." & CurrentProcedureName
+        Contract.IsPArray ipArrayAddress, myCodeLoc
+        
+        Dim myIdx() As Long
+        Dim myLBound As Long = LBound(ipArrayAddress)
+        Dim myUbound As Long = UBound(ipArrayAddress)
+        ReDim myIdx(myLBound To myUbound)
+        /*
+            ms help pages on get an put elements indicates that the values of ipArrayAddess need to be reversed
+            
+            SafeArrayGetElement function (oleauto.h)
+            A vector of indexes for each dimension of the array. The right-most (least significant) dimension is rgIndices[0]. The left-most dimension is stored at rgIndices[psa->cDims – 1].
+
+            SafeArrayPutElement function (oleauto.h)
+            A vector of indexes for each dimension of the array. The right-most (least significant) dimension is rgIndices[0]. The left-most dimension is stored at rgIndices[psa->cDims – 1].
+
+            However, trials have shown that this is not the case???? so I may be reading the help info incorrectly.
+            But we do need to convert the incoming array of variants to an array of long.
+        */
+        Dim myRank As Long
+        For myRank = UBound(ipArrayAddress) To LBound(ipArrayAddress) Step -1
+            /* ToDo: Implement IsIntegerNumber method and corresponding IsReal method.*/
+            Contract.IsNumber(ipArrayAddress(myRank)), myCodeLoc
+            myIdx(myRank) = VBA.CLng(ipArrayAddress(myRank))
+        Next
+        
+        Return myIdx
+        
+    End Function
+    
+    
+    Public Property Let Item(ByRef iopArray As Variant, ByRef ipIdx As Variant, ByRef ipValue As Variant)
+        
+        Dim myCodeLoc As String = "FreedomLib.FBase.ArrayUtils." & CurrentProcedureName
+        
+        Contract.IsPArray iopArray, myCodeLoc
+        Contract.IsPArray ipIdx, myCodeLoc
+        Contract.IsNotUDT ipValue, myCodeLoc
+        
+        Dim myDims As Long = Unsafe.SADims(iopArray)
+        
+        /* 
+            SafeArrayGetVarType will return 12 (VT_VARIANT) if the array is an array of variants
+           in which case we don't need to concernourselves about the type of the variant
+        */
+        Dim mySAAddr As LongPtr = Unsafe.SAAddr(iopArray)
+        
+        /* check that the supplied variant matches the type of the array */
+        Dim mySAType As Long = Unsafe.SAVarType(iopArray)
+        If Success(Err.LastHresult, myCodeLoc) Then
+            Dim myValueDataAddr As LongPtr
+            If mySAType = VT_VARIANT Then
+                myValueDataAddr = VarPtr(ipValue)
+            ElseIf mySAType = VT_DECIMAL Then
+                myValueDataAddr = VarPtr(ipValue)
+            
+            Else
+                
+                Dim myValueType As Long = Unsafe.VarVt(ipValue)
+                If myValueType And mySAType <> mySAType Then
+                    Err.Raise 17 + vbObjectError, _
+                        myCodeLoc, _
+                        Fmt.Text("Type mismatch.  Expecting VARENUM of {0}. Got VARENUM of {1}", mySAType, myValueType)
+                End If
+                
+                myValueDataAddr = VarPtr(ipValue) + e_VarOffsets.m_Data1
+                
+            End If
+    
+            SafeArrayPutElement ByVal mySAAddr, Unsafe.SApvDAta(ipIdx), ByVal myValueDataAddr
+            
+            If Success(Err.LastHresult, myCodeLoc) Then
+                Exit Property
+            End If
+        End If
+        
+    End Property
+    
+    Public Property Set Item(ByRef iopArray As Variant, ByRef ipIdx As Variant, ByRef ipValue As Variant)
+
+        Dim myCodeLoc As String = "FreedomLib.FBase.ArrayUtils." & CurrentProcedureName
+        
+        Contract.IsPArray iopArray, myCodeLoc
+        Contract.IsPArray ipIdx, myCodeLoc
+        Contract.IsNotUDT ipValue, myCodeLoc
+        
+        /* 
+            SafeArrayGetVarType will return 12 (VT_VARIANT) if the array is an array of variants
+           in which case we don't need to concernourselves about the type of the variant
+        */
+        Dim mySAAddr As LongPtr = Unsafe.SAAddr(iopArray)
+        
+        /* check that the supplied variant matches the type of the array */
+        Dim mySAType As Long = Unsafe.SAVarType(iopArray)
+        If Success(Err.LastHresult, myCodeLoc) Then
+            Dim myValueDataAddr As LongPtr
+            If mySAType = VT_VARIANT Then
+            
+                myValueDataAddr = VarPtr(ipValue)
+                
+            ElseIf mySAType = VT_DECIMAL Then
+            
+                myValueDataAddr = VarPtr(ipValue)
+                
+            Else
+
+                Dim myValueType As Long = Unsafe.VarVt(ipValue)
+                If myValueType And mySAType <> mySAType Then
+                    Err.Raise 17 + vbObjectError, _
+                        myCodeLoc, _
+                        Fmt.Text("Type mismatch.  Expecting VARENUM of {0}. Got VARENUM of {1}", mySAType, myValueType)
+                End If
+                
+                myValueDataAddr = VarPtr(ipValue) + e_VarOffsets.m_Data1
+                
+            End If
+    
+            SafeArrayPutElement ByVal mySAAddr, Unsafe.SApvDAta(ipIdx), ByVal myValueDataAddr
+            If Success(Err.LastHresult, myCodeLoc) Then
+                Exit Property
+            End If
+        End If
+        
+    End Property
+    
+    
+    Public Property Get Item(ByRef iopArray As Variant, ByRef ipIdx() As Long) As Variant
+        
+        Dim myCodeLoc As String = "FreedomLib.FBase.ArrayUtils." & CurrentProcedureName
+    
+        Contract.IsPArray iopArray, myCodeLoc
+        Contract.IsPArray ipIdx, myCodeLoc
+        
+        Dim myResult As Variant
+        
+        Dim mySAAddr As LongPtr = Unsafe.SAAddr(iopArray)
+        
+        
+        Dim mySAType As Integer = Unsafe.SAVarType(iopArray)
+        'SafeArrayGetVartype ByVal mySAAddr, VarPtr(mySAType)
+        
+        If Success(Err.LastHresult, myCodeLoc) Then
+            /* set the address for copying the data from the safearray item */
+            Dim myValueDataAddr As LongPtr
+            If (mySAType And VT_VARIANT) = VT_VARIANT Then
+                /* 
+                  if mySAType is 12 then the array is composed of variants
+                  so we need the address of the myResult
+                */
+                myValueDataAddr = VarPtr(myResult)
+                
+            ElseIf (mySAType And VT_DECIMAL) = VT_DECIMAL Then
+                /* decimals are stored differently to variants so we need to provide the address of myResult*/
+                myValueDataAddr = VarPtr(myResult)
+                
+            Else
+                /*set the type for myResult */
+                ' Todo: this feels wrong as it ignores byref flags etc
+                vbaCopyBytes LenB(Of Integer), VarPtr(myResult), VarPtr(mySAType)
+                /* 
+                   The array is not composed of variants so we need the address
+                   of Data1 of myResult, the destination variant,
+                   as this Is where we will copy the data from iopArray item
+                */
+                myValueDataAddr = VarPtr(myResult) + e_VarOffsets.m_Data1
+                
+            End If
+    
+            SafeArrayGetElement mySAAddr, ByVal Unsafe.SApvDAta(ipIdx), ByVal myValueDataAddr
+            
+            If Success(Err.LastHresult, myCodeLoc) Then
+                Return myResult
+            End If
+            
+        End If
+        /* oops something unexpected happened */
+        Err.Raise 17 + vbObjectError, _
+            myCodeLoc, _
+            "Invalid SafeArrayGetElement request"
+        
+    End Property
+    
+End Module

@@ -1,0 +1,99 @@
+Module TestMatrix
+
+    Option Explicit
+    Option Base 0
+    Option Private Module
+
+    Public Sub MatrixTests()
+
+        Debug.Print CurrentComponentName,
+        Test01_IsObjectAndName
+        Test02_MatchesVBAArray
+        
+        Debug.Print vbTab, vbTab, vbTab, "Testing completed"
+
+    End Sub
+
+    '@TestMethod("Matrix")
+    Private Sub Test01_IsObjectAndName()
+
+        ' on error goto TestFail
+    
+        'Arrange: 
+        Dim myExpected As Variant = Array(True, "Matrix", "Matrix")
+        Dim myResult As Variant
+        Dim mycoll As Collection = New Collection
+        Dim myM As Matrix = Matrix(Array(0, 10))
+        With mycoll
+       
+            .Add VBA.IsObject(myM)
+            .Add VBA.TypeName(myM)
+            .Add myM.TypeName
+            
+        End With
+        myResult = mycoll.Items
+        'Assert:
+        
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Matrix")
+    Private Sub Test02_MatchesVBAArray()
+
+        ' on error goto TestFail
+    
+        'Arrange: 
+        Dim myExpected As Boolean = True
+        Dim myResult As Boolean = True
+        
+        Dim myM As Matrix = Matrix.Deb(Array(0, 2), Array(0, 2), Array(0, 2))
+        Dim myArray(0 To 2, 0 To 2, 0 To 2) As Variant
+        
+        Dim myF As Long
+        For myF = 0 To 2
+            Dim myS As Long
+            For myS = 0 To 2
+                Dim myT As Long
+                For myT = 0 To 2
+                    myArray(myF, myS, myT) = 1 + myF * 10 + myS * 100 + myT * 1000
+                    myM.Item(Idx(myF, myS, myT)) = 1 + myF * 10 + myS * 100 + myT * 1000
+                Next
+            Next
+        Next
+        
+        
+        For myF = 0 To 2
+            For myS = 0 To 2
+                For myT = 0 To 2
+                    If myArray(myF, myS, myT) <> myM.Item(idx(myF, myS, myT)) Then
+                        myResult = False
+                        GoTo NotSame
+                    End If
+                Next
+            Next
+        Next
+        
+        NotSame:
+        'Assert:
+        
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+End Module

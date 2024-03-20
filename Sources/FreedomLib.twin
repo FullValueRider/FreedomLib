@@ -1,0 +1,7 @@
+Module FreedomLib
+
+    Option Base 0
+	Public Const FLIB_Err                       As Long = 17 + vbobjecterror
+    Public Const FLIB                           As String = "FreedomLib."
+    
+End Module

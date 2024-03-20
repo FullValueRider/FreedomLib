@@ -1,19 +1,14 @@
 Module TestFormatter
 
     Option Explicit
+    Option Base 0
     Option Private Module
 
     Public Sub FormatterTests()
 
-    
-        #If twinbasic Then
-            Debug.Print CurrentProcedureName, vbTab,
-        #Else
-            GlobalAssert
-            VBATesting = True
-            Debug.Print ErrEx.LiveCallstack.ProcedureName, vbTab, vbTab,
-        #End If
-
+        
+        Debug.Print CurrentComponentName,
+        
         Test01a_Fmt_Text_Nothing
         Test01b_Fmt_Text_NoParams
         Test01c_Fmt_Text_NoSubstitutions
@@ -22,7 +17,7 @@ Module TestFormatter
         Test01f_Fmt_Text_Formatting_Zeroplainquotes
         Test01g_Fmt_Text_Formatting_ThreeVariables
     
-        Debug.Print "Testing completed"
+        Debug.Print vbTab, vbTab, vbTab, "Testing completed"
 
     End Sub
 
@@ -269,7 +264,7 @@ Module TestFormatter
             .Add 50
             .Add 60
         End With
-        myResult = Fmt(e_VarGenre.m_vbVarType).Text("{0}", myC)
+        myResult = Fmt(e_VarGenre.m_VBA).Text("{0}", myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
@@ -304,7 +299,7 @@ Module TestFormatter
             .Add 50
             .Add 60
         End With
-        myResult = Fmt(e_VarGenre.m_FVarType).Text("{0}", myC)
+        myResult = Fmt(e_VarGenre.m_FLib).Text("{0}", myC)
         'Assert:
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     

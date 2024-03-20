@@ -1,0 +1,582 @@
+[Description("A class that knows how to iterate any variable: Ranges can specified (via the fts method) as offsets using using 1 based indexing.")]
+Class Iter
+    /* Class Iter 
+    Class iter uses built in knowledge of varaables (via the Var class) to allow any variable that 
+    contains a value to be iterated between the first index and last index of each rank (or a subset thereof)
+    
+    Examples of variables that do not contain, or do not have accessible values are
+    1. Uninitialised arrays narrays and uarrays)
+    2. UDT - because they cannot be passed via a variant
+    3. Holder types with a count of zero (lacksItems)
+    
+    For these types of variable the MoveNext and MovePrev methods will always return false
+        
+    Subsets of range(s) to be iterated can be defined via the FTS method.
+    
+    Moving towards the LastIndex is via the MoveNext method which return true if the move was successful
+    Moving towards the FirstIndex is via the MovePrev method which returns true if the move was su ccessful.
+    
+    The FTS method can specify start and end bounds withing the region specified by the First and LastIndexes of the specified rank
+    The FTS method can specify a step (only as a positive value) whic is the number of items to move in response to a MoveNext or MovePrev call
+    
+    Iter is designed to provide three values
+    1. CurItem: The item value
+    2. CurOffset: The (offset+1) from the firstindex
+    3. CurKey: The Key* of the value.
+    
+    These three methods may optionally take a long value which specified a 1 based 
+    offset from the current position i.e. A value of 1 specified the current value.
+    
+    e.g. CurItem get the current item.  CurItem(2) specifies the value 1 step towards the lastindex (as curItem is shorthand for CurItem(1))
+    
+    * Key is used in its most generic form i.e. the key is value that is used in conjunction with the host variable access method to retirieve the value corresponding to the key
+    i.e i.e.
+    For an arraylist they key will be the index
+    For a collection the key may be the index ot the string value used as a key
+    For a dictionary it will be the value used as a key
+    
+        
+    ## Internal operation
+    Iter can retrieve the first and last index of a variable via its encapsulation in the Var class.
+    The start and end of the subrange are specified in StartOffsets and EndOffsets
+    The current offset is specified by CurOffsets
+    and the Current Rank by curRank
+    */
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Option Explicit
+    Option Base 0
+    
+    Implements Var Via Host
+   
+    Private Const MY_TYPENAME               As String = "Iter"
+    Private Const my_LOC                    As String = "FreedomLib.FBase.Iter."
+    Private Const MY_FIRSTINDEXES           As Long = 0
+    Private Const MY_LASTINDEXES            As Long = 1
+    
+    Private Type State
+       
+        AltItems                            As Variant ' Keys if ipItems is a dictionary, ' Items if ipItems is a ToArray object
+    
+        StartIndex()                         As Long
+        EndIndex()                           As Long
+        CurIndex()                           As Long
+        CurRank                             As Long       ' Takes a value of 1 to Host.Ranks
+        Step                                As Variant    ' The number of items to move in response to a MoveNext or MovePrev
+        WrapAround                          As Boolean    ' Automaticall allows seamless transition from End Index to StartIndex and vice versa
+                                                          ' When wrap around is true MovePrev and MveNext will never return false
+    
+    End Type
+
+
+    Private s                               As State
+
+    Private Type Properties
+        WrapAround As Boolean
+    End Type
+    
+    Private p                              As Properties
+
+    [DefaultMember]
+    Public Function Deb(ByRef ipItems As Variant) As Iter
+        With New Iter
+            Set Deb = .ConstructInstance(ipItems)
+        End With
+    End Function
+
+
+
+    Friend Function ConstructInstance(ByRef ipItems As Variant) As Iter
+        
+        Set Host = Var(ipItems)
+        Select Case True
+            
+            Case Host.IsItemByKey
+                s.AltItems = ipItems.keys
+                
+            Case Host.IsItemByToArray
+                s.AltItems = ipItems.toarray
+                
+        End Select
+        
+        Dim myLbound As Long = Host.FirstIndex(1)
+        Dim myUbound As Long = Host.LastIndex(1)
+        
+        ' Dimension index variables
+        s.StartIndex = Host.Bounds(MY_FIRSTINDEXES)
+        s.EndIndex = Host.Bounds(MY_LASTINDEXES)
+        s.CurIndex = Host.Bounds(MY_FIRSTINDEXES)
+        
+        ReDim s.Step(myLbound To myUbound)
+        
+        ' set offset variables to their initial values
+        Dim myIndex As Long
+        For myIndex = 1 To Host.Ranks
+            s.Step(myIndex) = 1 ' step will be negative if ipstartindex > ipendindex
+        Next
+
+        p.WrapAround = False
+        Return Me
+    
+     End Function
+
+    [Description("Setting this value to True enables Iter yo move to FirstIndex from LastIndex and ViceVersa i.e. MoveNext and MovePrev will never return False")]
+    Public Property Get WrapAround() As Boolean
+        Return p.WrapAround
+    End Property
+    
+    [Description("Returns the current status of WrapArround.  Default is False")]
+    Public Property Let WrapAround(ByVal ipWrapAround As Boolean)
+        p.WrapAround = ipWrapAround
+    End Property
+    
+    /*
+        The methods isarray and items and isstring are currently needed 
+        because Host is a copy and not a reference
+        thereefore after any updates we need to pass back the host
+    */
+
+    [Description("Returns the input Item in a variant.  In the case of the input being an Array, returns a Matrix")]
+    Public Function Items() As Variant
+        Return Host.Cargo
+    End Function
+
+    [Description("Returns the number of elements represented by Cargo.  Allows specifying a Rank for Array/Matrix Items")]
+    Public Function Size(Optional ByRef ipRank As Long = 0) As Long
+        Contract.IsInNumRange ipRank, 0, Host.Ranks, my_LOC & CurrentProcedureName
+        Return Host.Count(ipRank)
+    End Function
+
+    [Description("returns False if ipCargo is a Holder object with a count of 0 or if Cargo is an Item that does have accessible values e.g. Array() or UDT")]
+    Public Function HoldsItems() As Boolean
+        Return Host.HoldsItems
+    End Function
+
+    [Description("returns True if ipCargo is a Holder object with a count of 0 or if Cargo is an Item that does have accessible values e.g. Array() or UDT")]
+    Public Function LacksItems() As Boolean
+        Return Host.LacksItems
+    End Function
+
+
+    '@Description("Sets the subrange and stepping for a rank. From,To should be provided as offsets +1. Positive values are offset + 1 from FirstIndex, negative values are -(offset+1) from LastIndex. Steps is the number of items to move per iteration the direction of movement is determined by the values of From and To. Mapping to the ative index is done by IterItems")
+    Public Function FTS _
+    ( _
+        Optional ByRef ipStartOffset1 As Variant = 1, _
+        Optional ByRef ipEndOffset1 As Variant = -1, _
+        Optional ByRef ipStep As Long = 1, _
+        Optional ipRank As Long = 1 _
+    ) As Iter
+        /*
+        ipStartIndex and ipEndindex parameters are specified as offsets +1 in the range 1 to count or -1 to -count.
+        Positive values are offsets+1 from the firstindex 
+        Negative offsets are-(offsets +1) from the Last 
+        Thus the range firstindex to lastindex can be specified as 1 to -1
+        
+        Internal to Iter,  offset1 values are normalised to 'real' indexes for the variable encapsulated by Host
+        
+        */
+        If Host.LacksItems Then
+            Return Me
+        End If
+        
+        ' validate the input parameters
+        Dim myLoc As String = my_LOC & CurrentProcedureName
+        Contract.IsInNumRange ipRank, 1, Host.Ranks, myLoc, "ipRank must be a value from 1 to " & VBA.CStr(Host.Ranks)
+        Contract.IsMTEQ ipStep, 1, myLoc, "ipStep must be a positive integer with a value of 1 or more.  Got " & VBA.CStr(ipStep)
+        Dim myCount As Long = Host.Count(ipRank)
+        Contract.IsNotInNumRange ipStartOffset1, -1, 1, myLoc, Fmt.Text("ipStartIndex must be in the range {0} to {1} or -{0} to -{1}", 1, myCount)
+        Contract.IsNotValue ipStartOffset1, -1, 1, myLoc, Fmt.Text("ipEndIndex must be in the range {0} to {1} or -{0} to -{1}", 1, myCount)
+        
+        ' Get the first and last index for the specified Rank.
+        Dim myFirstIndex As Long = Host.Bounds(MY_FIRSTINDEXES)(ipRank)
+        Dim myLastIndex As Long = Host.Bounds(MY_LASTINDEXES)(ipRank)
+        
+        ' ipStartIndex and ipEndIndex may be specified as negative values
+        ' so each value has two sets of ranges that they could belong to
+        If ipStartOffset1 > 0 Then
+            Contract.IsInNumRange ipStartOffset1, 1, myCount, myLoc
+        Else
+            Contract.IsInNumRange ipStartOffset1, -1, -myCount, myLoc
+        End If
+        
+        If ipEndOffset1 > 0 Then
+            Contract.IsInNumRange ipEndOffset1, 1, myCount, myLoc
+        Else
+            Contract.IsInNumRange ipEndOffset1, -1, -myCount, myLoc
+        End If
+
+        ' validation of inputs is now complete.  Time to work out start end indexes
+        
+        
+        
+        If ipStartOffset1 > 0 Then
+            s.StartIndex(ipRank) = myFirstIndex + ipStartOffset1(ipRank) - 1
+        Else
+            s.StartIndex(ipRank) = myLastIndex + ipStartOffset1(ipRank) + 1
+        End If
+        
+        If ipEndOffset1 > 0 Then
+            s.EndIndex(ipRank) = myFirstIndex + ipEndOffset1 - 1
+        Else
+            s.EndIndex(ipRank) = myLastIndex + ipEndOffset1 + 1
+        End If
+       
+        ' If s.StartIndex(ipRank) > s.EndIndex(ipRank) Then
+        '     s.Step(ipRank) = -ipStep
+        ' End If
+        
+        s.CurIndex(ipRank) = s.StartIndex(ipRank)
+        Return Me
+        
+     End Function
+
+
+    ' '@Description("MoveToEndIndex moves to the nearest step position before or equal to EndIndex of the current rank.  If the True parameters is provided all ranks are set to end index)
+    ' Public Function MoveToEndIndex(Optional ByRef ipAll As Boolean = False) As Iter
+    '     If Host.LacksItems Then
+    '         Return Me
+    '     End If
+        
+    '     If ipAll Then
+    '         Dim myIndex As Long
+    '         For myIndex = 1 To Host.Ranks
+    '     End If
+    '     s.GlobalOffset = ((s.EndIndex - s.FirstIndex) \ s.Step) * s.Step
+    '     Set MoveToEndIndex = Me
+    ' End Function
+
+
+    '@Description("Moves to the defined Strt position
+    Public Function MoveToStartIndex() As Iter
+        s.GlobalOffset = s.StartIndex - s.FirstIndex '+ 1
+        Set MoveToStartIndex = Me
+    End Function
+
+
+    '@Description("Moves to firstindex, resets StartIndex stop EndIndex")
+    Public Function MoveToFirst() As Iter
+    Attribute MoveToFirst.VB_Description = "Moves to firstindex, resets StartIndex stop EndIndex"
+        s.GlobalOffset = 0
+        s.StartIndex = s.FirstIndex
+        s.EndIndex = s.LastIndex
+        s.Step = 1
+        Set MoveToFirst = Me
+    End Function
+
+
+    '@Description("Moves to firstindex, resets StartIndex stop EndIndex")
+    Public Function MoveToLast() As Iter
+    Attribute MoveToLast.VB_Description = "Moves to firstindex, resets StartIndex stop EndIndex"
+        s.GlobalOffset = Host.Count - 1
+        s.StartIndex = s.FirstIndex
+        s.EndIndex = s.LastIndex
+        s.Step = 1
+        Set MoveToLast = Me
+    End Function
+
+
+    Public Function HasNext(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+
+        If Host.LacksItems Then
+            Return False
+        End If
+        
+        If Host.IsSimple Then
+            Return False
+        End If
+        
+        Dim myMove As Long = s.Step(s.CurRank) + s.Step(s.CurRank) * ipLocalOffset
+        
+        If s.StartIndex(s.CurRank) <= s.EndIndex(s.CurRank) Then
+            Return IIf(s.CurIndex(s.CurRank) + myMove <= s.EndIndex(s.CurRank), True, False)
+        Else
+            Return IIf(s.CurIndex(s.CurRank) - myMove >= s.EndIndex(s.CurRank), True, False)
+        End If
+    
+    End Function
+
+
+    Public Function HasNoNext(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+        HasNoNext = Not HasNext(ipLocalOffset)
+    End Function
+
+
+    Public Function HasPrev(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+
+        If Host.LacksItems Then
+            Return False
+        End If
+        
+        If Host.IsSimple Then
+            Return False
+        End If
+        
+        Dim myMove As Long = s.Step(s.CurRank) + s.Step(s.CurRank) * ipLocalOffset
+        
+        If s.StartIndex(s.CurRank) <= s.EndIndex(s.CurRank) Then
+            Return IIf(s.CurIndex(s.CurRank) - myMove >= s.StartIndex(s.CurRank), True, False)
+        Else
+            Return IIf(s.CurIndex(s.CurRank) + myMove <= s.StartIndex(s.CurRank), True, False)
+        End If
+    
+    End Function
+
+
+    Public Function HasNoPrev(Optional ByRef ipLocalOffset As Long = 0) As Boolean
+        HasNoPrev = Not HasPrev(ipLocalOffset)
+    End Function
+
+
+    Public Function MoveNext(Optional ByRef ipSteps As Long = 1) As Boolean
+        
+        If Me.HasNoNext(ipSteps) Then
+            Return False
+        End If
+        
+        Dim myMove As Long = s.Step(s.CurRank) + ipSteps * s.Step(s.CurRank)
+        
+        If s.StartIndex(s.CurRank) <= s.EndIndex(s.CurRank) Then
+            s.CurIndex(s.CurRank) += myMove
+        Else
+            s.CurIndex(s.CurRank) -= myMove
+        End If
+        
+        Return True
+            
+    End Function
+
+
+    Public Function MovePrev(Optional ByRef ipSteps As Long = 1) As Boolean
+        
+        If Me.HasNoPrev(ipSteps) Then
+            Return False
+        End If
+        
+        Dim myMove As Long = s.Step(s.CurRank) + ipSteps * s.Step(s.CurRank)
+        
+        If s.StartIndex(s.CurRank) <= s.EndIndex(s.CurRank) Then
+            s.CurIndex(s.CurRank) -= myMove
+        Else
+            s.CurIndex(s.CurRank) += myMove
+        End If
+        
+        Return True
+        
+    End Function
+
+
+    '@Description("Get the items at the global + local offset.  Default local offset = 0. offset = number of steps")
+    Public Property Get CurItem(ByVal ipOffset As Long) As Variant
+
+        Dim myLoc As Long
+   
+        If Host.FirstIndex(s.CurRank) <= Host.LastIndex(s.CurRank) Then
+            If Me.HasNoNext(ipOffset) Then
+                Return Null
+            Else
+                myLoc = s.CurIndex(s.CurRank)
+            End If
+            End If
+        Else
+            If HasNoPrev(ipOffset) Then
+                Return Null
+            End If
+        End If
+        
+        Dim
+        Select Case True
+            
+            Case Host.LacksItems
+                Return Null
+    
+            Case Host.IsPArray
+                Return GetPArrayItem
+                
+            Case Host.IsItemByToArray
+                Return s.AltItems(s.CurIndex(s.CurRank))
+                
+            Case Host.IsMatrix
+                Return Host.Cargo.Item(Loc(s.CurIndex))
+                
+            Case Host.IsString:
+                Return VBA.Mid$(Host.Cargo, s.CurIndex(s.CurRank), 1)
+            
+            Case Host.IsItemByKey:
+                Return Host.Cargo.Item(s.AltItems(s.CurIndex(s.CurRank)))
+                
+            Case Host.IsItemByIndex1, Host.IsItemByIndex0:
+                Return Host.Cargo.Item(s.CurIndex(s.CurRank))
+            
+                Case Host.IsmpObject
+                    Return GetMpObjectItem
+            Case Else
+                Err.Raise 17 + vbObjectError, _
+                    my_LOC & CurrentProcedureName, _
+                    "Unknown Var type"
+        
+        End Select
+     
+    End Property
+
+
+    ''@Description("Assigns a value to the curretn non object Item")
+    Public Property Let CurItem(ByVal ipLocalOffset As Long, ByVal ipItem As Variant)
+
+        Dim myLoc As Long: myLoc = s.GlobalOffset + ipLocalOffset + s.FirstIndex
+        If myLoc < s.StartIndex Or myLoc > s.EndIndex Then
+            ' is it preferable to error here
+            Exit Property
+        End If
+    
+        Select Case True
+    
+            Case Host.IsArray
+                Host(myLoc) = ipItem
+            Case Host.IsString:               VBA.Mid(Host.Cargo, myLoc, 1) = ipItem
+            Case Host.IsItemByToArray:        s.Items(myLoc) = ipItem
+            Case Host.IsItemByKey:            Host.Cargo.Item(myLoc) = ipItem
+            Case Host.IsItemByIndex0:         Host.Cargo.Item(myLoc) = ipItem
+            Case Host.IsItemByIndex1:
+                If Host.IsCollection Then
+                    Host.Cargo.Add ipItem, after:=myLoc
+                    Host.Cargo.Remove myLoc
+                Else
+                    Host.Cargo.Item(myLoc) = ipItem
+                End If
+            Case Else:                                  Host = ipItem
+        End Select
+    
+    End Property
+
+
+    '@Description("Sets the value of the current object Item")
+    Public Property Set CurItem(ByVal ipLocalOffset As Long, ByVal ipItem As Variant)
+
+        Dim myLoc As Long: myLoc = s.GlobalOffset + ipLocalOffset + s.FirstIndex
+        If myLoc < s.StartIndex Or myLoc > s.EndIndex Then
+            ' is it preferable to error here
+            Exit Property
+        End If
+    
+        Select Case True
+    
+            Case Host.IsArray:                                VariantCopy Host.Cargo(myLoc), ipItem
+            Case Host.IsString:                               VBA.Mid(Host.Cargo, myLoc, 1) = ipItem
+            Case Host.IsItemByToArray:                        Set s.Items(myLoc) = ipItem
+            Case Host.IsItemByKey:                            Set Host.Cargo.Item(myLoc) = ipItem
+            Case Host.IsItemByIndex0:                         Set Host.Cargo.Item(myLoc) = ipItem
+            Case Host.IsItemByIndex1:                         Set Host.Cargo.Item(myLoc) = ipItem
+            Case Else:                                          Set Host = ipItem
+        End Select
+    
+    End Property
+
+
+    '@("Returns the host index of the current item")
+    Public Property Get CurKey(ByVal ipLocalOffset As Long) As Variant
+
+        Dim myLoc As Long: myLoc = s.GlobalOffset + ipLocalOffset + s.FirstIndex
+        If myLoc < s.StartIndex Or myLoc > s.EndIndex Then
+            CurKey = Null
+            Exit Property
+        End If
+    
+        Dim myResult As Variant
+        Select Case True
+    
+            Case Host.IsArray:                    myResult = Array(myLoc)
+            Case Host.IsString:                   myResult = Array(myLoc)
+            Case Host.IsItemByToArray:            myResult = Array(myLoc)
+            Case Host.IsItemByKey:                myResult = Array(s.Keys(myLoc))
+            Case Host.IsItemByIndex0:             myResult = Array(myLoc)
+            Case Host.IsItemByIndex1:             myResult = Array(myLoc)
+            Case Else:                              myResult = Array(1)
+            
+        End Select
+    
+        If VBA.IsObject(myResult(0)) Then
+            Set CurKey = myResult(0)
+        Else
+            CurKey = myResult(0)
+        End If
+
+    End Property
+
+
+    '@Description("Returns the 1 based index of the current item")
+    Public Property Get CurOffset(ByVal ipLocalOffset As Long) As Variant
+    Attribute CurOffset.VB_Description = "Returns the 1 based index of the current item"
+
+        Dim myOffset As Long: myOffset = s.GlobalOffset + ipLocalOffset
+        If myOffset < 0 Or myOffset > Host.Count - 1 Then
+            CurOffset = Null
+        Else
+            CurOffset = myOffset
+        End If
+    
+
+    End Property
+
+    Public Property Get TypeName() As String
+        TypeName = MY_TYPENAME
+    End Property
+
+    Public Property Get FirstIndex() As Long
+        FirstIndex = s.FirstIndex
+    End Property
+
+    Public Property Get StartIndex() As Long
+        StartIndex = s.StartIndex
+    End Property
+
+    Public Property Get LastIndex() As Long
+        LastIndex = s.LastIndex
+    End Property
+
+    Public Property Get EndIndex() As Long
+        EndIndex = s.EndIndex
+    End Property
+
+    Private Sub AlertInvalidFTs(ByRef ipType As String, ByRef ipValue As Long)
+
+        Err.Raise 17 + vbObjectError, _
+            CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName, _
+            Fmt.Text("Expecting {0} to be in the normalised range {1} to {2}. Got {3}", VBA.TypeName(ipType), s.GlobalOffset, Host.Count, ipValue)
+        
+    End Sub
+
+
+    Private Sub AlertNotNumber(ByRef ipItem As Variant)
+
+        Err.Raise 17 + vbObjectError, _
+        "IterItems: Invalid Number", _
+        Fmt.Text("Expecting an number. Got Type: {0}", VBA.TypeName(ipItem))
+        
+    End Sub
+
+
+    Private Sub AlertNegativeStep(ByRef ipStep As Variant)
+
+        Err.Raise 17 + vbObjectError, _
+        "IterItems: Invalid Negative Step", _
+        Fmt.Text("Negative steps ({0}) are deprecated.  Use MovePrev instead", ipStep)
+        
+    End Sub
+
+
+    Private Sub AlertNoItems()
+        Err.Raise 17 + vbObjectError, _
+        "Iteritems: No Items", _
+        "Cannot iterate an Item count of 0"
+    End Sub
+
+
+    Private Sub AlertInvalidStartEnd(ByRef ipStart As Long, ByRef ipEnd As Long)
+        Err.Raise 17 + vbObjectError, _
+        "IterItems.FTS|", _
+        Fmt.Text("Expcting start index before End index. Got Start of {0}, End of {1}", ipStart, ipEnd)
+    End Sub
+
+End Class

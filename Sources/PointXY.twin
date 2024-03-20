@@ -9,6 +9,8 @@ Class PointXY
     '@Folder("Lib")
     '@ModuleDescription("A class for two dimensional points")
     Option Explicit
+    Option Base 0
+    
     '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
     Private Const MY_TYPENAME                       As String = "PointXY"
 
@@ -68,8 +70,8 @@ Class PointXY
 
     Friend Function ConstructInstance(ByRef ipX As Variant, ByRef ipY As Variant) As PointXY
 
-        Allow.Number ipX, "PointXY.ConstructInstance"
-        Allow.Number ipY, "PointXY.ConstructInstance"
+        Contract.IsNumber ipX, "PointXY.ConstructInstance"
+        Contract.IsNumber ipY, "PointXY.ConstructInstance"
     
         p.X = ipX
         p.Y = ipY
@@ -88,7 +90,7 @@ Class PointXY
 
     Public Property Let X(ByVal ipX As Long)
 
-        Allow.Number ipX, "PointXY.Let_X"
+        Contract.IsNumber ipX, "PointXY.Let_X"
     
         p.X = ipX
     
@@ -100,7 +102,7 @@ Class PointXY
 
     Public Property Let Y(ByVal ipY As Long)
     
-        Allow.Number ipY, "PointXY.Let_Y"
+        Contract.IsNumber ipY, "PointXY.Let_Y"
 
         p.Y = ipY
     
@@ -140,10 +142,10 @@ Class PointXY
     ' Attribute AdjacentCoords.VB_Description = "Returns a SeqA of the adjacent coordinates.  The starting direction, subset, Type and rotation direction can be selected. Defaults to  Eightways, North, Clockwise, Absolute"
 
     '     Dim myLoc As String: myLoc = MY_TYPENAME & ".AdjacentCoords"
-    '     Allow.InNumRange ipAdjacentSet, e_AdjacentSet.m_First, e_AdjacentSet.m_Last, myLoc
-    '     Allow.InNumRange ipStartDirection, e_AdjacentDirection.m_First, e_AdjacentDirection.m_Last, myLoc
-    '     Allow.InNumRange ipRotation, e_AdjacentRotation.m_First, e_AdjacentDirection.m_Last, myLoc
-    '     Allow.InNumRange ipAdjacentType, e_AdjacentType.m_First, e_AdjacentType.m_Last, myLoc
+    '     Contract.IsInNumRange ipAdjacentSet, e_AdjacentSet.m_First, e_AdjacentSet.m_Last, myLoc
+    '     Contract.IsInNumRange ipStartDirection, e_AdjacentDirection.m_First, e_AdjacentDirection.m_Last, myLoc
+    '     Contract.IsInNumRange ipRotation, e_AdjacentRotation.m_First, e_AdjacentDirection.m_Last, myLoc
+    '     Contract.IsInNumRange ipAdjacentType, e_AdjacentType.m_First, e_AdjacentType.m_Last, myLoc
 
     '     Dim myS As SeqA: Set myS = SeqA.Deb
     
@@ -189,8 +191,8 @@ Class PointXY
     ' Public Function AdjacentCoord(ByRef ipDirection As e_AdjacentDirection, Optional ByVal ipAdjacentType As e_AdjacentType = m_Absolute) As PointXY
 
     '     Dim myLoc As String: myLoc = MY_TYPENAME & ".AdjacentCoord"
-    '     Allow.InNumRange ipDirection, e_AdjacentDirection.m_First, e_AdjacentDirection.m_Last, myLoc
-    '     Allow.InNumRange ipAdjacentType, e_AdjacentType.m_First, e_AdjacentType.m_Last, myLoc
+    '     Contract.IsInNumRange ipDirection, e_AdjacentDirection.m_First, e_AdjacentDirection.m_Last, myLoc
+    '     Contract.IsInNumRange ipAdjacentType, e_AdjacentType.m_First, e_AdjacentType.m_Last, myLoc
     
     '     Dim myPoint As PointXY
     

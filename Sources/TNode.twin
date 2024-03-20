@@ -1,6 +1,7 @@
 Class TNode
     
     Option Explicit
+    option base 0
     '@PredeclaredId
     '@Exposed
  

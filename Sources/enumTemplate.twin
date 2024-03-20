@@ -1,0 +1,106 @@
+Class enumTemplate
+
+    ' do find/replaces as necessary to tailor the template
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True  ' class is inteneded for use from the predeclaredId only
+    Attribute VB_Exposed = True
+    Option Explicit
+    Option Base 0
+    
+    Private Type State
+        Data                                    As Collection  ' We use a collection as it is built in to VBA and unlike an array, can return an IEnumVariant for newEnum.
+    End Type
+    
+    Private s                                   As State
+
+    Public Enum enumName
+        First = 1               ' Remember that Collections are indexed from 1
+        Member1 = First
+        member2
+        member3
+        member4
+        member5
+        Last = Member5
+    End Enum
+    
+    Private Enum DataField
+        Value = 0              ' Arrays created by Array() wil have the Lbound as 0
+        Name
+    End Enum
+    
+    
+    ' delete the next section once the template has been customised.
+    ' The values are only defined to prevent errors appearing in the tb Ide
+    Dim Member1Value As Variant = Empty
+    Dim Member2value As Variant = Empty
+    Dim Member3value As Variant = Empty
+    Dim Member4value As Variant = Empty
+    Dim Member5value As Variant = Empty
+    
+    Public Sub class_initialize()
+        
+        ' Restrict usage to the predeclaredId
+        If Me IsNot enumTemplate Then
+            Err.Raise 17 + vbObjectError, _
+                "EnumTemplate instantiation error", _
+                "Additional Instances of enumTemplate are not permitted"
+        End If
+        
+        If s.Data Is Nothing Then
+            InitialiseDataCollection
+        End If
+        
+    End Sub
+    
+    Private Sub InitialiseDataCollection()
+        
+        Set s.Data = New Collection
+            
+        With s.Data
+            .Add Array(Member1Value, "Member1")
+            .Add Array(Member2value, "Member2")
+            .Add Array(Member3value, "Member3")
+            .Add Array(Member4value, "Member4")
+            .Add Array(Member5value, "Member5")
+        End With
+        
+    End Sub
+    
+    Public Property Get Name(ByRef ipEnumNameMember As enumName) As String
+        Return s.Data.Item(ipEnumNameMember)(DataField.Name)
+    End Property
+    
+    
+    Public Property Get Value(ByRef ipEnumNameMember As enumName) As Variant
+        Return s.Data.Item(ipEnumNameMember)(DataField.Value)
+    End Property
+    
+    
+    Public Property Get Names() As Variant
+        Return GetMembers(DataField.Name)
+    End Property
+    
+    
+    Public Property Get Values() As Variant
+        Return GetMembers(DataField.Value)
+    End Property
+   
+    
+    Private Function GetMembers(ByRef ipDatafieldMember As DataField) As Variant
+        
+        Dim myC As Collection = New Collection
+        
+        Dim myIndex As Long
+        For myIndex = enumName.First To enumName.Last
+            myC.Add s.Data.Item(myIndex)(ipDatafieldMember)
+        Next
+        
+        Return myC.Items
+        
+    End Function
+    
+    Public Function NewEnum() As IEnumVARIANT
+        Return s.Data.[_NewEnum]
+    End Function
+
+End Class

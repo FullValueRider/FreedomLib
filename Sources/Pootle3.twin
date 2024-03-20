@@ -1,0 +1,28 @@
+Module Pootle3
+
+    Public Declare PtrSafe Sub copymem Lib "kernel32.dll" Alias "RtlMoveMemory" (ByVal dest As LongPtr, ByVal src As LongPtr, ByVal length As Long)
+    'Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+    
+
+    Public Sub TestCopy()
+
+        Dim myInts As intBuf
+
+        Dim myArray(0 To 15) As Integer
+        Dim myIndex As Integer
+        For myIndex = 0 To 15
+            myArray(myIndex) = myIndex * 10
+        Next
+    
+        copymem VarPtr(myInts), VarPtr(myArray(0)), 32
+        PrintintBuf myInts
+        testpassedarray myArray
+    End Sub
+    
+    Public Sub testpassedarray(ByRef iopArray As Variant)
+        Dim myInt2s As intBuf
+        copymem VarPtr(myInt2s), VarPtr(iopArray(0)), 32
+        Debug.Print
+        PrintintBuf myInt2s
+    End Sub
+End Module

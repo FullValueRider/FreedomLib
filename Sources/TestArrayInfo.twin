@@ -1,0 +1,421 @@
+Module TestArrayInfo
+
+    Option Explicit
+    Option Base 0
+    Option Private Module
+
+    Public Sub ArrayInfoTests()
+
+        
+        Debug.Print CurrentComponentName,
+        
+        Test01_ReadFromArray_Integer
+        Test02_ReadFromArray_Long
+        Test03_ReadFromArray_String
+        Test04_ReadFromArray_Double
+        Test05_ReadFromArray_Variant
+        Test06_WriteReadFromArray_Integer
+        Test07_WriteReadFromArray_Decimal
+        Test08_WriteReadFromArray_LongLong
+        Test09_WriteReadFromArray_Currency
+        
+        Debug.Print vbTab, vbTab, vbTab, "Testing completed"
+
+    End Sub
+    
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test01_ReadFromArray_Integer()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected() As Integer
+    
+        Dim myA(1 To 5, 1 To 5, 1 To 5) As Integer
+        Dim myCount As Integer = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myA(myFirst, mySecond, myThird) = myCount
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        myExpected = myA
+        
+        Dim myResult() As Integer
+        ReDim myResult(1 To 5, 1 To 5, 1 To 5)
+        'Act: 
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myResult(myFirst, mySecond, myThird) = Item(myA, Idx(myFirst, mySecond, myThird))
+                Next
+            Next
+        Next
+        'Assert:
+   
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName()
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test02_ReadFromArray_Long()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected() As Long
+    
+        Dim myA(1 To 5, 1 To 5, 1 To 5) As Long
+        Dim myCount As Long = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myA(myFirst, mySecond, myThird) = myCount&
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        myExpected = myA
+        
+        Dim myResult() As Long
+        ReDim myResult(1 To 5, 1 To 5, 1 To 5)
+        'Act: 
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myResult(myFirst, mySecond, myThird) = Item(myA, Idx(myFirst, mySecond, myThird))
+                Next
+            Next
+        Next
+        'Assert:
+   
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName()
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test03_ReadFromArray_String()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected() As String
+    
+        Dim myA(1 To 5, 1 To 5, 1 To 5) As String
+        Dim myCount As Long = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myA(myFirst, mySecond, myThird) = VBA.CStr(myCount)
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        myExpected = myA
+        
+        Dim myResult() As String
+        ReDim myResult(1 To 5, 1 To 5, 1 To 5)
+        'Act: 
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myResult(myFirst, mySecond, myThird) = Item(myA, Idx(myFirst, mySecond, myThird))
+                Next
+            Next
+        Next
+        'Assert:
+   
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName()
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test04_ReadFromArray_Double()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected() As Double
+    
+        Dim myA(1 To 5, 1 To 5, 1 To 5) As Double
+        Dim myCount As Long = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myA(myFirst, mySecond, myThird) = VBA.CStr(myCount)
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        myExpected = myA
+        
+        Dim myResult() As Double
+        ReDim myResult(1 To 5, 1 To 5, 1 To 5)
+        'Act: 
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myResult(myFirst, mySecond, myThird) = Item(myA, Idx(myFirst, mySecond, myThird))
+                Next
+            Next
+        Next
+        'Assert:
+   
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName()
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test05_ReadFromArray_Variant()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected() As Variant
+    
+        Dim myA(1 To 5, 1 To 5, 1 To 5) As Double
+        Dim myCount As Long = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myA(myFirst, mySecond, myThird) = myCount
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        myExpected = myA
+        
+        Dim myResult() As Variant
+        ReDim myResult(1 To 5, 1 To 5, 1 To 5)
+        'Act: 
+        
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myResult(myFirst, mySecond, myThird) = Item(myA, Idx(myFirst, mySecond, myThird))
+                Next
+            Next
+        Next
+        'Assert:
+   
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName()
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test06_WriteReadFromArray_Integer()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected(1 To 5, 1 To 5, 1 To 5) As Integer
+        Dim myResult(1 To 5, 1 To 5, 1 To 5) As Integer
+        Dim myTmp(1 To 5, 1 To 5, 1 To 5) As Integer
+        Dim myCount As Integer = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myExpected(myFirst, mySecond, myThird) = myCount
+                    Item(myTmp, Idx(myFirst, mySecond, myThird)) = myCount
+                    myResult(myFirst, mySecond, myThird) = Item(myTmp, Idx(myFirst, mySecond, myThird))
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test07_WriteReadFromArray_Decimal()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected(1 To 5, 1 To 5, 1 To 5) As Decimal
+        Dim myResult(1 To 5, 1 To 5, 1 To 5) As Decimal
+        Dim myTmp(1 To 5, 1 To 5, 1 To 5) As Decimal
+        
+        Dim myCount As Decimal = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myExpected(myFirst, mySecond, myThird) = myCount
+                    Item(myTmp, Idx(myFirst, mySecond, myThird)) = myCount
+                    myResult(myFirst, mySecond, myThird) = Item(myTmp, Idx(myFirst, mySecond, myThird))
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test08_WriteReadFromArray_LongLong()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected(1 To 5, 1 To 5, 1 To 5) As LongLong
+        Dim myResult(1 To 5, 1 To 5, 1 To 5) As LongLong
+        Dim myTmp(1 To 5, 1 To 5, 1 To 5) As LongLong
+        
+        Dim myCount As LongLong = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myExpected(myFirst, mySecond, myThird) = myCount
+                    Item(myTmp, Idx(myFirst, mySecond, myThird)) = myCount
+                    myResult(myFirst, mySecond, myThird) = Item(myTmp, Idx(myFirst, mySecond, myThird))
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("TestArrayInfo")
+    Public Sub Test09_WriteReadFromArray_Currency()
+
+        'On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected(1 To 5, 1 To 5, 1 To 5) As Currency
+        Dim myResult(1 To 5, 1 To 5, 1 To 5) As Currency
+        Dim myTmp(1 To 5, 1 To 5, 1 To 5) As Currency
+        
+        Dim myCount As Currency = 1
+        Dim myFirst As Long
+        Dim mySecond As Long
+        Dim myThird As Long
+        For myFirst = 1 To 5
+            For mySecond = 1 To 5
+                For myThird = 1 To 5
+                    myExpected(myFirst, mySecond, myThird) = myCount
+                    Item(myTmp, Idx(myFirst, mySecond, myThird)) = myCount
+                    myResult(myFirst, mySecond, myThird) = Item(myTmp, Idx(myFirst, mySecond, myThird))
+                    myCount += 1
+                Next
+            Next
+        Next
+        
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+End Module

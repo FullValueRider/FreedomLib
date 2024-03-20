@@ -1,897 +1,818 @@
-[ Description ("Class Var is a replacement for the Variant class.  It provides the metadata of TypeInfo via properties of an encapsulated variable (the cargo)") ]
+[Description("Class Var is a replacement for the Variant class.  It provides the metadata of TypeInfo via properties of an encapsulated variable (the cargo)")]
 Class Var
-
+    /* 
+        Class Var provides TypeInfo data about the encapsulated variable using fluent notation
+        e.g. myVar.FirstIndex rather than TypeInfo.FirstIndex(myVar)
+        
+        The class does not provide any mechanism for changin the value(2) of the encapsulated variable
+        
+        To do this the encapsulated variable should be reference by the 'Cargo' method
+        
+        In the case that Cargo encapsulated an Arrray, cargo returns the address of the safearray structure
+    */
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
     Option Explicit
-    
-    ' Private Enum e_FIdBits
-    '     m_Null = 1
-    '     m_First = e_FId.m_null
-    '     m_Empty = 1 << 2
-    '     m_Nothing = 1 << 3
-    '     m_CVErr = 1 << 4
-    '     m_ErrObject = 1 << 5
-    '     m_Boolean = 1 << 6
-    '     m_Byte = 1 << 7
-    '     m_Integer = 1 << 8
-    '     m_Long = 1 << 9
-    '     m_LongLong = 1 << 10
-    '     m_Single = 1 << 11
-    '     m_Double = 1 << 12
-    '     m_Currency = 1 << 13
-    '     m_Decimal = 1 << 14
-    '     m_Date = 1 << 15
-    '     m_String = 1 << 16
-    '     m_UDT = 1 << 17
-    '     m_ItemObject = 1 << 18
-    '     ' There are three states for an array
-    '     '1. VBA.IsArray = True, Lbound() give a out of bounds error
-    '     '2. VBA.IsArray = True, Ubound<Lbound
-    '     '3. VBA.IsArray = True, Ubound >= Lbound#
-    '     m_NArray = 1 << 19   ' N)il array - Lbound gives error
-    '     m_UArray = 1 << 20   ' U)npopulated array initialised array but UBound < Lbound
-    '     m_PArray = 1 << 21   ' P)opulated array Ubound >= Lbound
-        
-        
-    '     ' VBA predefined objects
-    '     m_Collection = 1 << 22
-    '     m_Debug = 1 << 23
-    '     m_Err = 1 << 24
-    '     m_UserForm = 1 << 25
-        
-    ' End Enum
-    
-    ' Private Enum e_FidUserBits
-    '     m_Dictionary = 1
-    '     m_Drive = 1 << 2
-    '     m_Drives = 1 << 3
-    '     m_File = 1 << 4
-    '     m_FileSystemObject = 1 << 5
-    '     m_Folder = 1 << 6
-    '     m_TextStream = 1 << 7
-        
-    '     ' ' mscorlib (system.collection
-    '     ' alternatives now provided in FBase
-    '     ' m_ArrayList
-    '     ' m_Stack
-    '     ' m_Queue
-        
-    '     ' FLib base
-    '     m_Args = 1 << 8
-    '     m_ArrayList = 1 << 9
-    '     m_cHashD = 1 << 10
-    '     m_Queue = 1 << 11
-    '     m_Stack = 1 << 12
-    '     m_Sys = 1 << 13
-    '     m_TNode = 1 << 14
-    '     m_Treap = 1 << 15
-        
-    '     ' FLib - Reflection
-    '     m_TypeInfo = 1 << 16
-    '     m_Var = 1 << 17
-        
-    '     ' Flib -StrUtils
-    '     m_TypeMarkup = 1 << 18
-    '     m_Stringifier = 1 << 19
-    '     m_Formatter = 1 << 20
-        
-    ' End Enum
-    
-    ' Private Enum FIdUser2Bits
-    
-    '     ' sequences
-    '     m_SeqA = 1
-    '     m_SeqAL = 1 << 1
-    '     m_SeqC = 1 << 2
-    '     m_SeqH = 1 << 3
-    '     m_SeqT = 1 << 3
-    '     m_SeqS = 1 << 4
-    '     m_SeqQ = 1 << 5
-        
-    '     ' kvp
-    '     m_KvpA = 1 << 6
-    '     m_KvpC = 1 << 7
-    '     m_KvpH = 1 << 8
-    '     m_KvpT = 1 << 9
-    '     ' Matrix
-    '     m_Matrix = 1 << 10
-        
-    ' End Enum
-    
-    ' Private Enum e_GroupBits
-    '     m_Admin = 1
-    '     m_Boolean = 1 << 2
-    '     m_Number = 1 << 3
-    '     m_String = 1 << 4
-    '     m_Array = 1 << 5
-    '     m_Record = 1 << 6
-    '     m_ItemObject = 1 << 7
-    '     m_ItemByIndex0 = 1 << 8
-    '     m_ItemByIndex1 = 1 << 9
-    '     m_ItemByKey = 1 << 10
-    '     m_Last = 1 << 11
-    '     m_ItemByToArray = e_Group.m_Last
-    ' End Enum
-    
-    ' Private Enum e_EntityBits
-    '     m_Simple = 1
-    '     m_Compound = 1 << 1
-    '     m_CompoundObject = 1 << 2
-    '     m_Holder = 1 << 3
-    ' End Enum
-    
-    ' Private Enum e_HolderBits
-    '     m_Indexable = 1
-    '     m_Items = 1 << 1
-    '     m_Container = 1 << 2
-    '     m_ItemByUnboundKey = 1 << 3
-    '     m_ItemByBoundKey = 1 << 4
-    '     m_ItemByProxy = 1 << 5
-    '     m_Mapper = 1 << 6
-    ' End Enum
+    Option Base 0
     
     Private Type Properties
         ' for debugging perposes
         Message                                 As String
-    	
+         
         ' the holder of the reference to the external variable
         Cargo                                   As Variant
-        ' used to preseve original value of cargo if the input is an array
-        ' used by class terminate event to release copy of array pointer.
-        Cargobackup                             As Variant
+        ' ' used to preseve original value of cargo if the input is an array
+        ' ' used by class terminate event to release copy of array pointer.
+        ' Cargobackup                             As Variant
         
         ' Number of dimensions of the variable. Non holders are 0, holders are 1 and multidimensional arrays = number of dimensions.
         Ranks                                   As Long
+        IsMissing                               As Boolean
+        IsNumeric                               As Boolean
+        IsArray                                 As Boolean
+        IsArrayInitialized                      As Boolean
         
-        ' the id array from s.GenreInfo
+        ' the id array from TpeInfo.NameToIds
+        ' the name array from TypeInfos.FidToNames
         Ids                                     As Variant
-                
-        VBAName                                 As String
-    	FName                                   As String
+        Names                                   As Variant
+       
         
-        ' Indexes are assigned based on the type
-        ' simple, compound and compound object 1,1
-        ' seq dictionary etc 0, count -1 or 1, count
-        ' arrays lbound/ubound for each dimension
-        FirstIndex()                            As Variant
-        LastIndex()                             As Variant
-        HoldsItems                              As Boolean  ' True if not  for uninitialised arrays, 0 for containers with no items
-        LacksItems                              As Boolean
-        Count()                                 As Variant  ' 0 based array.  number of items in valiable.  0 is used for total count for arrays
+        FlibName                                As String
+        FlibId                                  As Long
+        FirstIndex                              As Variant  ' 1 based array 
+        LastIndex                               As Variant  ' 1 based array
+        Count                                   As Variant  ' 0 based array.  number of items in valiable.  0 is used for total count for arrays
         
     End Type
-      
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' IdMethods
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+ 
+    Private p                                   As Properties
     
-        ' Id                                      As e_FId
-        ' GroupId                                 As e_Group
-        ' VBAId                                   As VbVarType
-        ' EntityId                                As e_Entity
-        ' HolderId                                As e_Holder
-       
-    
-
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' ' Entity Property Gets
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'         IsSimple                                As Boolean
-'         IsCompound                              As Boolean
-'         IsCompoundObject                        As Boolean
-'         IsHolder                                As Boolean
-        
-    
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' ' Group Property Gets
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'         IsAdmin                             As Boolean
-'         IsBoolean                           As Boolean
-'         IsNumber                            As Boolean
-'         IsString                            As Boolean
-'         IsInitialisedArray                  As Boolean
-'         IsUdt                               As Boolean
-        
-'         IsItemObject                        As Boolean
-'         IsItemByIndex1                      As Boolean
-'         IsItemByIndex0                      As Boolean
-'         IsItemByKey                         As Boolean
-'         IsItemByToArray                     As Boolean
-        
-
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'Holder Property Gets
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' m_Indexable                          ' a string, array or any type of container
-' m_ItemsHolder                        ' holds multiple items - array, or container
-' m_Container                          ' Objects that hold multiple items i.e. not arrays
-' m_ItemByIndex                        ' Objects the use a .Item method with a numeric index
-' m_Mapper     
-
-        ' IsIndexable                             As Boolean
-        ' IsItems                                 As Boolean
-        ' IsContainer                             As Boolean
-        ' IsItemByUnboundKey                      As Boolean
-        ' IsItemByBoundKey                        As Boolean
-        ' IsItemByProxy                           As Boolean
-        ' IsMapper                                As Boolean
-        
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'Implied property methods
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'@Description(returns the first index as a long, or false if ipItem is not indexable)
-    
-   
-
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'Methods that simplify vartype
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-
-    '     IsByte                                  As Boolean
-    '     IsInteger                               As Boolean
-    '     IsLong                                  As Boolean
-    '     IsLongLong                              As Boolean
-    '     IsSingle                                As Boolean
-    '     IsDouble                                As Boolean
-    '     IsCurrency                              As Boolean
-    '     IsDecimal                               As Boolean
-    '     IsDate                                  As Boolean
-    '     IsEmpty                                 As Boolean
-        
-    ' End Type
-
-    Private p                                       As Properties
-
-
-    Private Sub classs_initialise()
-    End Sub
+    Const MY_TYPENAME                           As String = "Var"
+    Const MY_LOC                                As String = "FreedomLib.Fbase.Var."
+    ' Private Sub class_initialize()
+    ' End Sub
     
     
-    '@DefaultMember
-    Public Function Deb(ByRef ipItem As Variant, Optional ipRank As Long = 1) As Var
+    [DefaultMember]
+    Public Function Deb(ByRef ipItem As Variant) As Var
         With New Var
-            Set Deb = ConstructInstance(ipItem, ipRank)
+            Return .ConstructInstance(ipItem)
         End With
     End Function
 
-    Friend Function ConstructInstance(ByRef ipItem As Variant, ByRef ipRank As Long) As Var
+    Friend Function ConstructInstance(ByRef ipItem As Variant) As Var
         
-        ' at present I can't differentiate between a variable array and a literal array
-        ' VT and ffeatures have the same value for both types of array
-        ' This is an issue because literal array dissappear at the end of the deb call.
-        ' The immediate issue is solved by adding a safearraylock to the constructor code.
-        ' In the class_terminate code, the lock is removed and the p.cargo restored to its original variant contant.
+        /*
+         If ipitem is a parray then var will encapsulate it as a Matrix before storing in Cargo
+         NArrys and Uarrays can be copied 'as is' as they don't carry the baggage of a data area
+        */
         
-        ' for UDT we can get to this point in VBA but we can only detect that it is a UDT we have no access
-        ' to any of the udt members or any other form of testing due to the variable being classifiesd as an unsupported type.
+        ' 2. Inability to use UDT
+        '   For a UDT we can get to this point in twinBasic but we can only determine that it is a UDT we have no access
+        '   to any of the udt members and cannot pass it to any of the VBAIs... methods
         
-        ' entities
-        p.VBAName = VBA.TypeName(ipItem)
-        p.FName = TypeInfo.FName(ipItem)
         
         If Not TypeInfo.TryGetIds(ipItem, p.Ids) Then
-        	Err.Raise 17 + vbObjectError
+            Err.Raise 17 + vbObjectError, _
+                MY_LOC & CurrentProcedureName, _
+                "Type not assigned: " & VBA.TypeName(ipItem)
         End If
-
-        p.Cargo = 0
-        p.Cargobackup = Empty
         
+        ' Trygetids was successful so no need to test for names.
+        TypeInfo.TryGetNames VBA.CLng(p.Ids(e_GenreField.m_FLib)), p.Names
         
+        p.FlibName = p.Names(e_VarGenre.m_FLib)
+        p.FlibId = p.Ids(e_VarGenre.m_FLib)
+        /* 
+            P.Count has a lower bound of 0 because this is where we store the total number of elements of an array
+            First and last index arrays have a lower bound of 1 to match the ranks used in L?UBound statements
+        */
+        ReDim p.Count(0 To 1)
+        ReDim p.FirstIndex(1 To 1)
+        ReDim p.LastIndex(1 To 1)
         
-            ' need to revise this so that we can differentiate between
-            ' initialised and unitialised arrays
-            Allow.InitialisedArray ipItem, CurrentComponentName, CurrentProcedureName()
-            Unsafe.LockArray ipItem
+        p.Cargo = Empty
+       ' p.Cargobackup = 0
         
-           
-            ' Make a backup copy of the cargo variant
-            ' this copy will be used in the terminate code to restore the original value of p.cargo
-            [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargobackup), ByVal [_HiddenModule].VarPtr(p.Cargo)
-            ' copy the external array to s.host to avoid copying the array
-            [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargo), ByVal [_HiddenModule].VarPtr(ipItem)
-            'p.cargo now points to the external array
-            ' get the number of ranks in the array
-            p.Ranks = TypeInfo.Ranks(ipItem)
-            ' dim an array for the counts of the array and individual ranks
-            ReDim p.Count(0 To p.Ranks)
-            ' get the total number of elements in the array
-            p.Count(0) = TypeInfo.Count(ipItem, 0)
-            'dimension first and last index arrays for ranks
-            ReDim p.FirstIndex(1 To p.Ranks)
-            ReDim p.LastIndex(1 To p.Ranks)
-            
-            ' populate rank counts and first/lastindex for eaach rank
-            Dim myIndex As Long
-            For myIndex = 1 To p.Ranks
-                p.Count(myIndex) = TypeInfo.Count(ipItem, myIndex)
-                p.FirstIndex(myIndex) = VBA.CVar(LBound(ipItem, myIndex))
-                p.LastIndex(myIndex) = VBA.CVar(UBound(ipItem, myIndex))
-            Next
-        ' End If
+       /*
+            The initialisation routines below are used to setp the first/lastindex properties
+       
+       */
+       
+        If p.FlibId(e_GenreField.m_FLib) = e_Id.m_PArray Then
+            p.Cargo = Matrix().Bind(ipItem)
+        ElseIf VBA.IsObject(ipItem) Then
+            Set p.Cargo = ipItem
         Else
-            
-        Select Case True
-        	
-            Case IsAdmin
-            Case p.Ids(e_GenreField.m_Gro) = e_Entity.m_Compound
-            Case p.Ids(e_GenreField.m_)
-            Case TypeInfo.IsCompound(ipItem)
-        End Select
-            If VBA.IsObject(ipItem) Then
-            	Set p.Cargo = ipItem
-            Else
-                p.Cargo = ipItem
-            End If
-            ' Arrays are used to match the arrays created when ipItem is an array.
-            p.Count = Array(TypeInfo.Count(ipItem))
-            p.FirstIndex = Array(TypeInfo.FirstIndex(ipItem))
-            p.LastIndex = Array(TypeInfo.LastIndex(ipItem))
+            p.Cargo = ipItem
         End If
-
-'         With TypeInfo
+       
+        Select Case p.Ids(e_VarGenre.m_Group)
             
-'             p.FName =.FName(ipItem)
-'             p.GroupName = .GroupName(ipItem)
-'             p.IsArray = VBA.IsArray(ipItem)
-'             p.IsDate = VBA.IsDate(ipItem)
-'             p.IsNothing =.IsNothing(ipItem)
-'             p.IsNull = VBA.IsNull(ipItem)
-'             p.IsCVErr = VBA.IsError(ipItem)
-'             p.IsErrObject = .IsErrObject(ipItem)
-'             p.IsObject = VBA.IsObject(ipItem)
-'             p.IsMissing = VBA.IsMissing(ipItem)
-
-'             p.Id = .FId(ipItem)
-'             p.GroupId =.GroupId(ipItem)
-'             p.VBAId = .VBAId(ipItem)
-'             p.EntityId = .EntityId(ipItem)
-'             p.HolderId =.HolderId(ipItem)
+            Case e_Group.m_Admin, e_Group.m_Boolean, e_Group.m_Number, e_Group.m_mpObject
+                ' also deals with the case of is missing as missing is part of the admin group.
+                InitialiseForSingleValue ipItem
+                
+            Case e_Group.m_UDT
+                InitialiseForUDT
+                
+            Case e_Group.m_NotInit
+                InitialiseForNotInit ipItem
+                
+            Case e_Group.m_Holder
+                
+                Select Case p.Ids(e_VarGenre.m_Holder)
+                    
+                    Case e_Holder.m_String
+                        InitialiseForHolderString VBA.CStr(ipItem)
+                        
+                    Case e_Holder.m_Array
+                        InitialiseForHolderArray ipItem
+                        
+                    Case e_Holder.m_ArrayObj
+                        InitialiseforHolderArrayObj
+                        
+                    Case Else
+                        InitialiseforHolderObject ipItem
+                
+                End Select
+                
+       End Select
         
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' ' Entity Property Gets
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'             p.IsSimple =.IsSimple(ipItem)
-'             p.IsCompound =.IsCompound(ipItem)
-'             p.IsCompoundObject = .IsCompoundObject(ipItem)
-'             p.IsHolder = .IsHolder(ipItem)
-            
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' ' Group Property Gets
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'             p.IsAdmin =.IsAdmin(ipItem)
-'             p.IsBoolean = .IsBoolean(ipItem)
-'             p.IsNumber =.IsNumber(ipItem)
-'             p.IsString =.IsString(ipItem)
-'             p.IsInitialisedArray =.IsInitialisedArray(ipItem)
-            
-'             p.IsItemObject =.IsItemObject(ipItem)
-'             p.IsItemByIndex1 =.IsItemByIndex1(ipItem)
-'             p.IsItemByIndex0 =.IsItemByIndex0(ipItem)
-'             p.IsItemByKey =.IsItemByKey(ipItem)
-'             p.IsItemByToArray =.IsItemByToArray(ipItem)
-            
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' 'Holder Property Gets
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-'     ' m_Indexable                          ' a string, array or any type of container
-'     ' m_ItemsHolder                             ' holds multiple items - array, or container
-'     ' m_Container                          ' Objects that hold multiple items i.e. not arrays
-'     ' m_ItemByIndex                        ' Objects the use a .Item method with a numeric index
-'     ' m_Mapper     
-
-'             p.IsIndexable =.IsIndexable(ipItem)
-'             p.IsItems = .IsItems(ipItem)
-'             p.IsContainer = .IsContainer(ipItem)
-'             p.IsItemByBoundKey =.IsItemByBoundKey(ipItem)
-'             p.IsItemByUnboundKey = .IsItemByUnboundKey(ipItem)
-'             p.IsItemByProxy = .IsItemByProxy(ipItem)
-'             p.IsMapper = .IsMapper(ipItem)
-            
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' 'Implied property methods
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-            
-'             'p.FirstIndex = .FirstIndex(ipItem, ipRank)
-'             'p.LastIndex = .LastIndex(ipItem, ipRank)
-'             p.HoldsItems =.HoldsItems(ipItem)
-'             p.LacksItems =.LacksItems(ipItem)
-'             'Count - needs to be a Property Get call
-    
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' 'Methods that simplify vartype
-' '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-
-'             p.IsByte =.IsByte(ipItem)
-'             p.IsInteger =.IsInteger(ipItem)
-'             p.IsLong = .IsLong(ipItem)
-'             p.IsLongLong =.IsLongLong(ipItem)
-'             p.IsSingle =.IsSingle(ipItem)
-'             p.IsDouble =.IsDouble(ipItem)
-'             p.IsCurrency =.IsCurrency(ipItem)
-'             p.IsDecimal =.IsDecimal(ipItem)
-'             p.IsDate = VBA.IsDate(ipItem)
-'             p.IsEmpty = VBA.IsEmpty(ipItem)
-            
-'         End With
-        
-        Set ConstructInstance = Me
+        Return Me
         
     End Function
+
+    
+    Private Sub InitialiseForHolderString(ByRef ipItem As String)
+        
+        p.Cargo = ipItem
+        p.Count(0) = VBA.Len(ipItem)
+        p.Count(1) = p.Count(0)
+        p.Ranks = 1
+        p.FirstIndex(1) = 1
+        p.LastIndex(1) = p.Count(0)
+        p.IsArray = False
+        p.IsNumeric = VBA.IsNumeric(ipItem)
+        p.IsArrayInitialized = False
+        p.IsMissing = False
+        
+    End Sub
+    
+    Private Sub InitialiseForUDT()
+        ' A udt passed as a variant can be determine dto be a UDT using vartype.  No other information is available.
+        p.Cargo = Null
+        p.Count(0) = 1
+        p.Count(1) = 1
+        p.Ranks = 0
+        p.FirstIndex(1) = 1
+        p.LastIndex(1) = -1
+        p.IsArray = False
+        p.IsArrayInitialized = False
+        p.IsNumeric = False
+        p.IsMissing = False
+            
+    End Sub
+    
+    Private Sub InitialiseForNotInit(ByRef ipArray As Variant)
+        
+        p.Cargo = ipArray
+        p.Ranks = -1
+        p.Count(0) = -1
+        p.Count(1) = -1
+        p.FirstIndex(1) = 0
+        p.LastIndex(1) = -1
+        p.IsArray = True
+        p.IsArrayInitialized = (p.FlibId = e_Id.m_UArray)
+       
+        p.IsNumeric = False
+        p.IsMissing = False
+        
+    End Sub
+    
+    
+    Private Sub InitialiseForHolderArray(ByRef ipItem As Variant)
+        ' a holder array is a PArry (has dimensioned safearraystructure)
+        ' Make a backup copy of the cargo variant
+        ' this copy will be used in the terminate code to remove the reference to the external array
+        [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargobackup), ByVal [_HiddenModule].VarPtr(ipItem)
+        ' copy the reference to the external array to p.cargo to avoid copying the array
+        [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargo), ByVal [_HiddenModule].VarPtr(ipItem)
+        'Lock the array to prevent literal arrays from being destroyed when this method completes
+        'current poor workaround for not being able to determine the difference between myArray and Array(1,2,3,4,5)
+        Unsafe.LockArray(p.Cargo)
+        
+        
+        p.Ranks = Unsafe.SADims(p.Cargo)
+        ReDim p.Count(0 To p.Ranks)
+        ReDim p.FirstIndex(1 To p.Ranks)
+        ReDim p.LastIndex(1 To p.Ranks)
+        p.Count(0) = TypeInfo.Count(p.Cargo)
+        Dim myIndex As Long
+        For myIndex = 1 To p.Ranks
+            p.Count(myIndex) = TypeInfo.Count(p.Cargo, myIndex)
+            p.FirstIndex(myIndex) = TypeInfo.FirstIndex(p.Cargo, myIndex)
+            p.LastIndex(myIndex) = TypeInfo.LastIndex(p.Cargo, myIndex)
+        Next
+        
+        p.IsArray = True
+        p.IsArrayInitialized = True
+        p.IsNumeric = False
+        p.IsMissing = False
+        
+    End Sub
+    
+    Private Sub InitialiseforHolderObject(ByRef ipitem As Variant)
+        
+        Set p.Cargo = ipitem
+        p.Ranks = 1
+        p.Count(0) = ipitem.count
+        p.Count(1) = p.Count(0)
+        
+        Select Case p.Ids(e_VarGenre.m_Holder)
+            Case e_Holder.m_ItemByIndex0
+                p.FirstIndex(1) = 0
+                p.LastIndex(1) = p.Count(0) - 1
+            Case e_Holder.m_ItemByIndex1
+                p.FirstIndex(1) = 1
+                p.LastIndex(1) = p.Count(0)
+            Case e_Holder.m_ItemByKey
+                p.FirstIndex(1) = 1
+                p.LastIndex(1) = p.Count(0)
+            Case e_Holder.m_ItemByToArray
+                p.FirstIndex(1) = 0
+                p.LastIndex(1) = p.Count(0) - 1
+                
+        End Select
+        
+        p.IsArray = False
+        p.IsArrayInitialized = False
+        p.IsNumeric = False
+        p.IsMissing = False
+        
+    End Sub
+    
+    Public Sub InitialiseForSingleValue(ByRef ipItem As Variant)
+
+        If VBA.IsObject(ipItem) Then
+            Set p.Cargo = ipItem
+        Else
+            p.Cargo = ipItem
+        End If
+        If VBA.IsMissing(ipItem) Then
+            p.Count(0) = -1
+            p.Count(1) = -1
+            p.FirstIndex(1) = 0
+            p.LastIndex(1) = -1
+            p.IsMissing = True
+        Else
+            
+            p.Count(0) = 1
+            p.Count(1) = 1
+            p.Ranks = 0
+            p.FirstIndex(1) = 1
+            p.LastIndex(1) = 1
+            p.IsMissing = False
+        End If
+        p.IsArray = False
+        p.IsArrayInitialized = False
+        p.IsNumeric = VBA.IsNumeric(ipItem)
+        
+    End Sub
 
     Public Property Get Cargo() As Variant
     	Return p.Cargo
     End Property
     
 
-    
-    
-
     Public Sub class_Terminate()
-    	
-        ' release the array pointed to by p.cargo.
-        Unsafe.SafeArrayUnlock ByVal ArrayPtr(p.Cargo)
-        ' Restore the original content of p.cargo so that the garbage collector
-        ' doesn't try to do a double deletion of the safe array.
-        [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal VarPtr(p.Cargo), ByVal VarPtr(p.Cargobackup)
+    	If Not Me Is Var Then
+            ' release the array pointed to by p.cargo.
+            'Unsafe.SafeArrayUnlock ByVal ArrayPtr(p.Cargo)
+            ' Restore the original content of p.cargo so that the garbage collector
+            ' doesn't try to do a double deletion of the safe array.
+            [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal VarPtr(p.Cargo), ByVal VarPtr(p.Cargobackup)
+        End If
        
     End Sub
     
-   
-    Public Property Get FName() As String
-    	Return p.FName
-    End Property
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' FreedomLib Type Names and Ids
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    [Description("Returns a lower cased name if defined by FreedomLib else vbnullstring)")]
+    Public Function Name(Optional ByRef ipGenre As e_VarGenre = e_VarGenre.m_Flib) As String
+    	Contract.IsInNumRange ipGenre, e_VarGenre.m_First, e_VarGenre.m_Last, MY_LOC & CurrentProcedureName
+        Return p.Names(ipGenre)
+    End Function
+
+
+    [Description("Returns a positive long value if defined by FreedomLib else -1)")]
+    Public Function Id(Optional ByRef ipGenre As e_VarGenre = e_VarGenre.m_Flib) As Long
+        Contract.IsInNumRange ipGenre, e_VarGenre.m_First, e_VarGenre.m_Last, MY_LOC & CurrentProcedureName
+        Return p.Ids(ipGenre)
+    End Function
+
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' Alternatives for VBA.IsXXX methods( which are not type specific) together with their complement
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    'Description ("Method IsArrayInitialized is in TwinBasic but only determines if a safearray struct exists and hence does not distinguish between Unpopulated and Populated arrays. FreedomLib recommends one of the following specific methods IsNArray, IsUArray and IsParray)")
+    Public Function IsArrayInitialized() As Boolean
+            Return p.IsArrayInitialized
+    End Function
+
+    Public Function IsArrayNotInitialized() As Boolean
+            Return (Not p.IsArrayInitialized)
+    End Function
+
+
+    Public Function IsMissing() As Boolean
+        Return (p.IsMissing)
+    End Function
+
+    Public Function IsNotMissing() As Boolean
+        Return (Not p.IsMissing)
+    End Function
+
     
-    ' Public Property Get GroupName() As String
-    ' 	Return p.GroupName
-    ' End Property
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' Methods
-'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    ' Description("FreedomLib suggests you might prefer to use the IsNumber method which avoids the coercion of strings to numbers")
+    Public Function IsNumeric() As Boolean
+        Return p.IsNumeric
+    End Function
+
+    Public Function IsNotNumeric() As Boolean
+        Return (Not p.IsNumeric)
+    End Function
     
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-' Complements for VBA.IsXXX methods found in VBX
+'Methods that replicate VBA.Vartype vartype
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
-        Public Function IsArray() As Boolean
-        	Return p.Ids(e_GenreField.m_Group) = e_Group.m_Array
-        End Function
-        
-        Public Property Get IsNotArray() As Boolean
-        	Return (Not Me.IsArray)
-        End Property
-        
-        Public Property Get IsNull() As Boolean
-        	Return p.Ids(e_GenreField.m_FVarType) = e_FId.m_Null
-        End Property
-        
-        Public Property Get IsNotNull() As Boolean
-        	Return (Not Me.IsNull)
-        End Property
-        
-        Public Property Get IsDate() As Boolean
-        	Return p.Ids(e_GenreField.m_FVarType) = e_FId.m_Date
-        End Property
-        
-        Public Property Get IsNotDate() As Boolean
-        	Return (Not Me.IsDate)
-        End Property
-        
-        
-       Public Property Get IsEmpty() As Boolean
-          Return p.Ids(e_GenreField.m_FVarType) = e_FId.m_Empty
-        End Property
-        
-        Public Property Get IsNotEmpty() As Boolean
-        	Return (Not IsEmpty)
-        End Property
-        
+    Public Function IsEmpty() As Boolean
+        Return (p.FlibId = e_Id.m_Empty)
+    End Function
+            
+    Public Function IsNotEmpty() As Boolean
+        Return (Not Me.IsEmpty)
+    End Function
 
-        [ Description ("True if ipItem is 'nothing'. Returns false if ipItem is not an object.  Avoids the unusual 'x is nothing' syntax") ]
-        Public Property Get IsNothing() As Boolean
-            Return p.Ids(e_GenreField.m_FVarType) = e_FId.m_Nothing
-        End Property
-
-        Public Function IsNotNothing() As Boolean
-            Return (Not Me.IsNothing)
-        End Function
-
-        Public Property Get IsError() As Boolean
-        	Return p.Ids(e_GenreField.m_FVarType) = e_FId.m_CVErr
-        End Property
-
-        Public Property Get IsNotError() As Boolean
-            Return (Not Me.IsError)
-        End Property
+    Public Function IsDate() As Boolean
+        Return (p.FlibId = e_Id.m_Date)
+    End Function
         
-        ' despite our best effots
-        Public Property Get IsObject() As Boolean
-        	Return _
-            ( _
-                    (p.Ids(e_GenreField.m_Group) = e_Group.m_ItemObject) _
-                Or (p.Ids(e_GenreField.m_Holder) = e_Holder.m_Container) _
-            )
-        End Property
-        
-        Public Property Get IsNOtObject() As Boolean
-            Return TypeInfo.IsNotObject(p.Cargo)
-        End Property
+    Public Function IsNotDate() As Boolean
+        Return (Not Me.IsDate)
+    End Function
 
-        Public Property Get IsMissing() As Boolean
-        	Return p.IsMissing
-        End Property
+    Public Function IsNull() As Boolean
+        Return (p.FlibId = e_Id.m_Null)
+    End Function
         
-        Public Property Get IsNotMissing() As Boolean
-            Return (Not p.IsMissing)
-        End Property
+    Public Function IsNotNull() As Boolean
+        Return (Not Me.IsNull)
+    End Function
 
-        Public Property Get IsNumeric() As Boolean
-        	Return p.IsNumeric
-        End Property
+    [Description("True if ipItem is 'nothing'. Returns false if ipItem is not an object.  Avoids the unusual 'x is nothing' syntax")]
+    Public Function IsNothing() As Boolean
+        Return (p.FlibId = e_Id.m_Nothing)
+    End Function
+
+    Public Function IsNotNothing() As Boolean
+        Return (Not Me.IsNothing)
+    End Function
+
+
+    [Description("Tests for not being an error created using CVErr")]
+    Public Function IsError() As Boolean
+        Return (p.FlibId = e_Id.m_CVErr)
+    End Function
         
-        Public Function IsNotNumeric() As Boolean
-            Return (Not p.IsNumeric)
-        End Function
+    Public Function IsNotError() As Boolean
+        IsNotError = (Not Me.IsError)
+    End Function
+
+    [Description("Tests for the Err object See IsError and IsNotError for errors generated using CVErr")]
+    Public Function IsErrObject() As Boolean
+        Return (p.FlibId = e_Id.m_ErrObject)
+    End Function
+        
+    Public Function IsNotErrObject() As Boolean
+        Return (Not Me.IsErrObject)
+    End Function
+        
+    Public Function IsObject() As Boolean
+        Return (p.Ids(e_VarGenre.m_Entity) = e_Entity.m_Object)
+    End Function
+        
+    Public Function IsNotObject() As Boolean
+        Return (Not Me.IsObject)
+    End Function
+
+    Public Function IsByte() As Boolean
+        Return (p.FlibId = e_Id.m_Byte)
+    End Function
+
+    Public Function IsNotByte() As Boolean
+        Return (Not Me.IsByte)
+    End Function
+
+
+    Public Function IsInteger() As Boolean
+        Return (p.FlibId = e_Id.m_Integer)
+    End Function
+
+    Public Function IsNotInteger() As Boolean
+        Return (Not Me.IsInteger)
+    End Function
+
+
+    Public Function IsLong() As Boolean
+        Return (p.FlibId = e_Id.m_Long)
+    End Function
+
+    Public Function IsNotLong() As Boolean
+        Return (Not Me.IsLong)
+    End Function
+
+    Public Function IsLongLong() As Boolean
+        Return (p.FlibId = e_Id.m_LongLong)
+    End Function
+
+    Public Function IsNotLonglong() As Boolean
+        Return (Not Me.IsLongLong)
+    End Function
+
+    Public Function IsSingle() As Boolean
+        Return (p.FlibId = e_Id.m_Single)
+    End Function
+
+    Public Function IsNotSingle() As Boolean
+        Return (Not Me.IsSingle)
+    End Function
+
+
+    Public Function IsDouble() As Boolean
+        Return (p.FlibId = e_Id.m_Double)
+    End Function
+
+    Public Function isNotDouble() As Boolean
+        Return (Not Me.IsDouble)
+    End Function
+
+
+    Public Function IsCurrency() As Boolean
+        Return (p.FlibId = e_Id.m_Currency)
+    End Function
+
+    Public Function IsNotCurrency() As Boolean
+        Return (Not Me.IsCurrency)
+    End Function
+
+
+    Public Function IsDecimal() As Boolean
+        Return (p.FlibId = e_Id.m_Decimal)
+    End Function
+
+    Public Function IsNotDecimal() As Boolean
+        Return (Not Me.IsDecimal)
+    End Function
     
-    Public Property Get Id() As e_FId
-        Return p.Id
-    End Property
-        
-    Public Property Get GroupId() As e_Group
-        Return p.GroupId
-    End Property
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' Entity functions
+    ' m_NotDefined
+    ' m_Simple = &H300                           ' holds a single value* that can be assigned without set
+    ' m_First = e_Entity.m_Simple
+    ' m_UserDefinedType                          ' a grouping of variables which are accessible using unique names qualified by the parent name 
+    ' m_Array
+    ' m_Last
+    ' m_Object = m_Last  
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
-    Public Property Get VBAId() As VbVarType
-        Return p.VBAId
-    End Property
-        
-    Public Property Get EntityId() As e_Entity
-        Return p.EntityId
-    End Property
-        
-    Public Property Get HolderId() As e_Holder
-        Return p.HolderId
-    End Property
-        
+    Public Function IsSimple() As Boolean
+        Return p.Ids(e_VarGenre.m_Entity) = e_Entity.m_Simple
+    End Function
 
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    ' Entity Property Gets
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    Public Property Get IsSimple() As Boolean
-        Return p.IsSimple
-    End Property
-
-    Public Property Get IsNotSImple() As Boolean
-        Return (Not p.IsSimple)
-    End Property
-
-    Public Property Get IsCompound() As Boolean
-        Return p.IsCompound
-    End Property
-
-    Public Property Get IsNotCompoundT() As Boolean
-        Return (Not IsCompound)
-    End Property
+    Public Function IsNotSimple() As Boolean
+        Return (Not Me.IsSimple)
+    End Function
 
 
-    Public Property Get IsCompoundObject() As Boolean
-        Return p.IsCompoundObject
-    End Property
+    Public Function IsUDT() As Boolean
+        Return p.Ids(e_VarGenre.m_Entity) = e_Entity.m_UserDefinedType
+    End Function
 
-    Public Property Get IsNotCompoundObject() As Boolean
-        Return (Not IsCompoundObject)
-    End Property
+    Public Function IsNotUDT() As Boolean
+        Return (Not Me.IsUDT)
+    End Function
+
+    'IsArray see group methods
+    'isObject see vbvartype methods
+    
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' Group functions
+    ' m_NotAssigned = -1
+    ' m_NotInit
+    ' m_Admin = &H500' null, nothing, errobject, error(CVErr) and empty are grouped on the basis that thier most common use is in the control of program flow.
+    ' m_First = e_group.m_Admin
+    ' m_Boolean
+    ' m_Number
+    ' m_UDT
+    ' m_mpObject  ' multiple value object
+    ' m_Last
+    ' m_Holder = e_group.m_Last
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    Public Function IsAdmin() As Boolean
+        Return p.Ids(e_VarGenre.m_Group) = e_Group.m_Admin
+    End Function
+
+    Public Function IsNotAdmin() As Boolean
+        Return (Not Me.IsAdmin)
+    End Function
 
 
-    Public Property Get IsHolder() As Boolean
-        Return p.IsHolder
-    End Property
-        
-    Public Property Get IsNotHolder() As Boolean
+    '@Description("True if ipItem is a Boolean.  Exludes objects with a default member returning a Boolean")
+    Public Function IsBoolean() As Boolean
+        Return p.Ids(e_VarGenre.m_Group) = e_Group.m_Boolean
+    End Function
+
+
+    Public Function IsNotBoolean() As Boolean
+        IsNotBoolean = (Not Me.IsBoolean)
+    End Function
+
+
+    '@Dewscription("True if ipItem is a Number.  Excludes objects with a default member returning a Number")
+    Public Function IsNumber() As Boolean
+        Return p.Ids(e_VarGenre.m_Group) = e_Group.m_Number
+    End Function
+
+    Public Function IsNotNumber() As Boolean
+        Return (Not Me.IsNumber)
+    End Function
+
+    'IsUdt see entity functions
+    
+    Public Function IsmpObject() As Boolean
+        Return p.Ids(e_VarGenre.m_Group) = e_Group.m_mpObject
+    End Function
+    
+    Public Function IsNotmpObject() As Boolean
+        Return (Not Me.IsmpObject)
+    End Function
+    
+    Public Function IsHolder() As Boolean
+        Return p.Ids(e_VarGenre.m_Group) = e_Group.m_Holder
+    End Function
+    
+    Public Function IsNotHolder() As Boolean
         Return (Not IsHolder)
-    End Property
-        
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    ' Group Property Gets
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    Public Property Get IsAdmin() As Boolean
-        Return p.IsAdmin
-    End Property
-
-    Public Property Get IsNotAdmin() As Boolean
-        Return (Not IsAdmin)
-    End Property
+    End Function
 
 
-    [ Description ("True if ipItem is a Boolean.  Exludes objects with a default member returning a Boolean") ]
-    Public Property Get IsBoolean() As Boolean
-        Return p.IsBoolean
-    End Property
-
-    Public Property Get IsNotBoolean() As Boolean
-        Return (Not IsBoolean)
-    End Property
-
-
-    [ Description ("True if ipItem is a Number.  Excludes objects with a default member returning a Number") ]
-    Public Property Get IsNumber() As Boolean
-        Return p.IsNumber
-    End Property
-
-    Public Property Get IsNotNumber() As Boolean
-        Return (Not IsNumber)
-    End Property
-
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' Holder methods
+    ' m_NotAssigned = -1
+    ' m_IsNotHolder = &H400                           ' the variable does not hold multiple values
+    ' m_First = e_Holder.m_IsNotHolder
+    ' m_String                                        ' Has multiple values that can be retrieved by an key or single method that takes an key
+    ' m_Array                                         ' variable which contain multiple distinct values  - array, containers,
+    ' m_ItemByIndex0
+    ' m_ItemByIndex1
+    ' m_ItemByKey
+    ' m_ItemByToArray                                        ' Objects which contain multiple values  ' avoids the use of ItemsObject which is too close to itemObject                               ' Objects which contain multiple values which require values to be extracted as an array( or some other indexable entity) to allow indexing  = e.g.  Stack, Queue
+    ' m_last = 1 << 6
+    ' m_Mapper = m_Last      
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
     '@Description("True if ipItem is a String. Excludes objects with a default member returning a String")
-    Public Property Get IsString() As Boolean
-        Return p.IsString
-    End Property
+    Public Function IsString() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_String)
+    End Function
 
-    Public Property Get IsNotString() As Boolean
-        Return (Not IsString)
-    End Property
+    '@Description("False if ipItem is a String. Excludes objects with a default member returning a String")
+    Public Function IsNotString() As Boolean
+        IsNotString = (Not Me.IsString)
+    End Function
 
-    [ Description ("Returns true is ipItem is an array.  If ipRanks is specified returns true only if ipRanks matches the number of ranks of the array") ]
-    '@(Description("Returns true if ipItem is a dimensioned Array.  Excludes objects with a default member returning an Array.  See also ArrayOp.Holds/LacksItems"))
-    Public Property Get IsInitialisedArray(Optional ipRanks As Long = 0) As Boolean
-        
-        If ipRanks = p.Ranks Then
-            Return p.IsInitialisedArray
-        Else
-            Return TypeInfo.IsInitialisedArray(p.Cargo, ipRanks)
-        End If
-        
-    End Property
-
-    Public Property Get IsNotInitialisedArray(Optional ipRanks As Long = 0) As Boolean
-        IsNotInitialisedArray = (Not Me.IsInitialisedArray(ipRanks))
-    End Property
+    [Description("Returns the value of VBA.IsArray")]
+    Public Function IsArray() As Boolean
+        Return p.IsArray
+    End Function
+    
+    Public Function IsNotArray() As Boolean
+        Return (Not Me.IsArray)
+    End Function
 
 
-    '@Description("Returns True if ipItem is an object that is not a Container.  E.g. PointXY is True, Collection is False")
-    Public Property Get IsItemObject() As Boolean
-        Return p.IsItemObject
-    End Property
+    Public Function IsItemByIndex1() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_ItemByIndex1)
+    End Function
 
-    Public Property Get IsNotItemObject() As Boolean
-        Return (Not IsItemObject)
-    End Property
-
-
-    '@Description("Returns true if ipItem is a container where Items are retrieved by an Item method with the Index starting at 1 e.g. Collection and Seq classes")
-    Public Property Get IsItemByIndex1() As Boolean
-        Return p.IsItemByIndex1
-    End Property
-
-    Public Property Get ISNotItemByIndex1() As Boolean
-        Return (Not IsItemByIndex1)
-    End Property
-
-    '@Description("Returns True if ipItem is a container where Items are retrieved by an Item method with the index starting at 0 e.g. mscorlib ArrayList")
-    Public Property Get IsItemByIndex0() As Boolean
-        Return p.IsItemByIndex0
-    End Property
-
-    Public Property Get IsNotItemByIndex0() As Boolean
-        Return (Not IsItemByIndex0)
-    End Property
+    Public Function IsNotItemByIndex1() As Boolean
+        Return (Not Me.IsItemByIndex1)
+    End Function
 
 
-    '@Description("Returns True if ipItem is a container where Items are retrieved by an Item method using a Key.  e.g. cHashD, Scripting.Dictionary, Kvp classes")
-    Public Property Get IsItemByKey() As Boolean
-        Return p.IsItemByKey
-    End Property
+    Public Function IsItemByIndex0() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_ItemByIndex0)
+    End Function
 
-    Public Property Get IsNotItemByKey() As Boolean
-        Return (Not IsItemByKey)
-    End Property
-
-
-    '@Description("True if ipItem is a container where an index can be used only after the items are extracted using the built in ToArray method.  e.g. mscorlib Stack, Queue")
-    Public Property Get IsItemByToArray() As Boolean
-        Return p.IsItemByToArray
-    End Property
-
-    Public Property Get IsNotItemByToArray() As Boolean
-        Return (Not IsItemByToArray)
-    End Property
+    Public Function IsNotItemByIndex0() As Boolean
+        Return (Not Me.IsItemByIndex0)
+    End Function
 
 
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    'Holder Property Gets
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    ' m_Indexable                           ' a string, array or any type of container
-    ' m_ItemsHolder                         ' holds multiple items - array, or container
-    ' m_Container                           ' Objects that hold multiple items i.e. not arrays
-    ' m_ItemByIndex                         ' Objects the use a .Item method with a numeric index
-    ' m_Mapper     
+    Public Function IsItemByKey() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_ItemByKey)
+    End Function
 
-    Public Property Get isIndexable() As Boolean
-        Return p.IsIndexable
-    End Property
-        
-    Public Property Get IsNotIndexable() As Boolean
-        Return (Not isIndexable)
-    End Property
-        
-        
-    Public Property Get IsItems() As Boolean
-        Return p.IsItems
-    End Property
-        
-    Public Property Get IsNotItems() As Boolean
-        Return (Not IsItems)
-    End Property
-        
-        
-    Public Property Get IsContainer() As Boolean
-        Return p.IsContainer
-    End Property
-
-    Public Property Get IsNotContainer() As Boolean
-        Return (Not IsContainer)
-    End Property
+    Public Function IsNotItemByKey() As Boolean
+        Return (Not Me.IsItemByKey)
+    End Function
 
 
-    Public Property Get IsItemByUnboundKey() As Boolean
-        Return p.IsItemByUnboundKey
-    End Property
+    Public Function IsItemByToArray() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_ItemByToArray)
+    End Function
 
-    Public Property Get IsNotItemByUnboundKey() As Boolean
-        Return (Not IsItemByUnboundKey)
-    End Property
-
-
-    Public Property Get IsItemByBoundKey() As Boolean
-        Return p.IsItemByBoundKey
-    End Property
-
-    Public Property Get IsNotItemByBoundKey() As Boolean
-        Return (Not IsItemByBoundKey)
-    End Property
+    Public Function IsNotItemByToArray() As Boolean
+        Return (Not Me.IsItemByToArray)
+    End Function
 
 
-    Public Property Get IsItemByProxy() As Boolean
-        Return p.IsItemByProxy
-    End Property
+    Public Function IsMapper() As Boolean
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_Mapper)
+    End Function
 
-    Public Property Get IsNotItemByProxy() As Boolean
-        Return (Not IsItemByProxy)
-    End Property
+    Public Function IsNotMapper() As Boolean
+        Return (Not Me.IsMapper)
+    End Function
     
     
-    Public Property Get IsMapper() As Boolean
-        Return p.IsMapper
-    End Property
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'flib
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
-    Public Property Get IsNotMapper() As Boolean
-        Return (Not IsMapper)
-    End Property
+    Public Function Bounds() As Variant
         
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    'Implied property methods
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    '@Description(returns the first index as a long, or false if ipItem is not indexable)
-    Public Property Get FirstIndex(Optional ipRank As Long = 1) As Variant
-    	Allow.InNumRange ipRank, 1, p.Ranks, "Var.FirstIndex)"
+        Dim myFirstIndexes As Variant
+        ReDim myFirstIndexes(1 To p.Ranks)
+        
+        Dim myLastIndexes As Variant
+        ReDim myLastIndexes(1 To p.Ranks)
+        
+        Dim myIndex As Long
+        For myIndex = 1 To p.Ranks
+            myFirstIndexes(myIndex) = p.FirstIndex(myIndex)
+            myLastIndexes(myIndex) = p.LastIndex(myIndex)
+        Next
+        
+        Return Array(myFirstIndexes, myLastIndexes)
+        
+    End Function
+    
+    [Description("Returns true if the variable is an array with no dimensions e.g. Dim myArray() as long")]
+    Public Function IsNArray() As Boolean
+        Return p.FlibId = e_Id.m_NArray
+    End Function
+    
+    Public Function IsNotNArray() As Boolean
+        Return (Not Me.IsNArray)
+    End Function
+    
+    [Description("Returns true if the variable is an array with an initialised safearray structre but no dimensions e.g. Array()")]
+    Public Function IsUArray() As Boolean
+        Return p.FlibId = e_Id.m_UArray
+    End Function
+    
+    Public Function IsNotUArray() As Boolean
+        Return (Not Me.IsUArray)
+    End Function
+    
+    [Description("Returns true if Variable is an array with defined dimensions  e.g. Dim myArray(x to y) or redim myArray(x to y)")]
+    Public Function IsPArray() As Boolean
+        Return p.Ids(e_VarGenre.m_FLib) = e_Id.m_PArray
+    End Function
+    
+    Public Function IsNotPArray() As Boolean
+        Return (Not Me.IsPArray)
+    End Function
+    
+    
+    Public Function IsMatrix() As Boolean
+        Return p.Ids(e_VarGenre.m_FLib) = e_Id.m_Matrix
+    End Function
+    
+    Public Function IsNotMatrix() As Boolean
+        Return Not Me.IsMatrix
+    End Function
+' review implied property methods to ensure consistent performance across all types
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'Implied property methods
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'The first an last index value ensure that at least one pass of a for loop
+' is executed **if** the value can be evaluated
+' Simple variables                      values of 1,1
+' Udt get                               values of 0,-1
+' narrays and uarrays                   values of 0,-1
+' holders get values which represent startindexes and count.
+    [Description("Returns the first index of the specified rank.  ipRanks Defaults to 1 for holder types")]
+    Public Function FirstIndex(Optional ipRank As Long = 1) As Long
+        If p.Ranks < 0 Then Return 0
+        If ipRank = 0 Then Return 1&
+        If ipRank < 1 Then Return 0
+        
         Return p.FirstIndex(ipRank)
-    End Property
+    End Function
 
-    Public Property Get LastIndex(Optional ipRank As Long = 1) As Variant
-    	Allow.InNumRange ipRank, 1, p.Ranks, "Var.LastIndex"
+    [Description("Returns the last index of the specified rank. Returns -1 for non-holder. Defaults to rank 1 for holders)")]
+    Public Function LastIndex(Optional ipRank As Long = 1) As Long
+        If p.Ranks < 0 Then Return -1
+        If ipRank = 0 Then Return 1&
+        If ipRank < 1 Then Return -1&
+        
         Return p.LastIndex(ipRank)
-    End Property
+    End Function
 
-    Public Property Get HoldsItems() As Boolean
-        Return p.HoldsItems
-    End Property
+    [Description("Returns True if variable is a holder type and contins 1 or more values")]
+    Public Function HoldsItems() As Boolean
+        Return (p.Ranks > 0 And p.Count(0) > 0)
+    End Function
 
-    Public Property Get LacksItems() As Boolean
-        Return (Not p.HoldsItems)
-    End Property
-    
-    Public Property Get HoldsOneItem() As Boolean
-        Return (p.Count(0))
-    End Property
+    Public Function LacksItems() As Boolean
+        Return Not Me.HoldsItems
+    End Function
 
-    [ Description ("Returns the number of elements in ipItem." & vbcrlf & _
-    " Counts are generated as follows" & vbcrlf & _
-    "- Non Indexable Items = 1" & vbcrlf & _
-    "- Uninitialised array = -1" & vbcrlf & _
-    "- Array with specified rank - Size of rank" & vbcrlf & _
-    "- Array with no specified rank = total number of elements in array (product of rank sizes)" & vbcrlf & _
-    "- String = Len(ipItem)" & vbcrlf & _ 
-    "- Container = the result of the .Count method") ]
-
-    Public Property Get Count(Optional ipRank As Long = 0) As Long
-        Allow.InNumRange ipRank, 0, p.Ranks, "Var.Count"
+   
+    [Description("returns the number of values per access method represented by the variable. Non holders are 1, empty holders and unallocated arrays return -1,")]
+    Public Function Count(Optional ipRank As Long = 0) As Long
+        If ipRank < 0 Then Return -1&
+        If p.Ranks = 0 Then Return 1&
+        If ipRank > p.Ranks Then Return -1&
         Return p.Count(ipRank)
-    End Property
+    End Function
 
-    Public Property Get Ranks() As Long
+    '[ Description ("Returns true if the variable is a single dimension array populated with a single item which is a single dimension array (i.e. a forwarded paramarray))]
+    Public Function IsLikeParamArray(ByRef ipItem As Variant) As Boolean
+    
+        If Not VBA.IsArray(ipItem) Then
+            Return False
+        End If
+    
+        If Not VBA.IsArrayInitialized(ipItem) Then
+            Return False
+        End If
+    
+        If UBound(ipItem, 1) <> LBound(ipItem(1)) Then
+            Return False
+        End If
+    
+        If Not VBA.IsArray(ipItem(0)) Then
+            Return False
+        End If
+    
+        If LBound(ipItem(0)) <> UBound(ipItem(0)) Then
+            Return False
+        End If
+    
+        Return True
+    
+    End Function
+
+
+    [Description(" returns the number of ranks represented by a variable, non holders return 0, arrays return the number of dimensuons otherwise 1")]
+    Public Function Ranks() As Long
         Return p.Ranks
+    End Function
+
+    ' Description ("Returns true if the specified variable has access to the ranks")
+    Public Function HoldsRank(ByVal ipRank As Long) As Boolean
+        If ipRank < 1 Then Return False
+        Return p.Ranks <= ipRank
+    End Function
+
+    Public Function LacksRanks(ByVal ipRank As Long, ByRef ipArray As Variant) As Boolean
+        Return Not HoldsRank(ipRank)
+    End Function
+
+
+
+    [Description("Returns the name 'TypeInfo'")]
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
     End Property
 
-    Public Property Get HoldsRank(ByVal ipRank As Long) As Boolean
-        Return (ipRank >= p.Ranks And ipRank <= UBound(p.Ranks))
-    End Property
+    Private Sub TypeNotAssigned(ByRef ipItem As Variant, ByRef ipLoc As String)
+        Err.Raise 17 + vbObjectError, _
+            "Freedomlib.FBase.TypeInfo." & ipLoc, _
+            "Type " & VBA.TypeName(ipItem) & " not known to FreedomLib"
+    End Sub
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'Convenience methods
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
     
-    Public Property Get LacksRank(ByVal ipRank As Long) As Boolean
-    	Return (Not HoldsRank(ipRank))
-    End Property
-    
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-    'Methods that simplify vartype
-    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-
-    Public Property Get IsByte() As Boolean
-        Return p.IsByte
-    End Property
-
-    Public Property Get IsNotByte() As Boolean
-        Return (Not p.IsByte)
-    End Property
-
-
-    Public Property Get IsInteger() As Boolean
-        Return p.IsInteger
-    End Property
-
-    Public Property Get IsNotInteger() As Boolean
-        Return (Not p.IsInteger)
-    End Property
-
-
-    Public Property Get IsLong() As Boolean
-        Return p.IsLong
-    End Property
-
-    Public Property Get IsNotLong() As Boolean
-        Return (Not p.IsLong)
-    End Property
-
-    Public Property Get IsLongLong() As Boolean
-        Return p.IsLongLong
-    End Property
-
-    Public Property Get IsNotLonglong() As Boolean
-        Return (Not p.IsLongLong)
-    End Property
-
-    Public Property Get IsSingle() As Boolean
-        Return p.IsSingle
-    End Property
-
-    Public Property Get IsNotSingle() As Boolean
-        Return (Not IsSingle)
-    End Property
-
-
-    Public Property Get IsDouble() As Boolean
-        Return p.IsDouble
-    End Property
-
-    Public Property Get isNotDouble() As Boolean
-        Return (Not IsDouble)
-    End Property
-
-
-    Public Property Get IsCurrency() As Boolean
-        Return p.IsCurrency
-    End Property
-
-    Public Property Get IsNotCurrency() As Boolean
-        Return (Not p.IsCurrency)
-    End Property
-
-
-    Public Property Get IsDecimal() As Boolean
-        Return p.IsDecimal
-    End Property
-
-    Public Property Get IsNotDecimal() As Boolean
-        Return (Not IsDecimal)
+    Public Property Get IsCollection() As Boolean
+        Return p.Ids(e_VarGenre.m_FLib) = e_Id.m_Collection
     End Property
 End Class

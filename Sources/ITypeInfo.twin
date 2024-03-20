@@ -1,0 +1,7 @@
+Interface ITypeInfo
+
+    Property Get Id(ByRef ipItem As Variant, Optional ByRef ipTypeGenre As e_VarGenre = e_varGenre.m_Flib) As Variant
+    Property Get Name(ByRef ipItem As Variant, Optional ByRef ipTypeGenre As e_VarGenre = e_VarGenre.m_Flib) As Variant
+
+End Interface
+

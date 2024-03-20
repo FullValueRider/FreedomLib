@@ -1,4 +1,4 @@
-[ Description ("Class Treap is provided as a low memory footprint dictionary (no hashing involved) which may be better small sets of data.  It should also be noted that storing items in a Treap automatically sorts them") ]
+[Description("Class Treap is provided as a low memory footprint dictionary (no hashing involved) which may be better small sets of data.  It should also be noted that storing items in a Treap automatically sorts them")]
 Class Treap
     ' see https://en.wikipedia.org/wiki/Treap
     ' This implementation is based on the c# full implementation from
@@ -10,6 +10,7 @@ Class Treap
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
     Option Explicit
+    option base 0
     
     /* 
     T1, T2 and T3 are subtrees of the tree rooted with y
@@ -36,7 +37,7 @@ Class Treap
     
     Const MY_TYPENAME                               As String = "Treap"
  
-    [ DefaultMember ]
+    [DefaultMember]
     Public Function Deb() As Treap
         With New Treap
             Return .ConstructInstance

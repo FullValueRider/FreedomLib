@@ -1,10 +1,11 @@
-[ Description ("Chars provides character definition and related strings and function.  Is is a Module so that we can have public constants") ]
+[Description("Chars provides character definition and related strings and function.  Is is a Module so that we can have public constants")]
 Module Chars
 
     Option Explicit
+    option base 0
     
     Public Const tbNullStr              As String = vbNullString
-    public const tbTilde                as string = "~"
+    Public Const tbTilde                As String = "~"
     Public Const tbBang                 As String = "!"
     Public Const tbHat                  As String = "^"
     Public Const tbEqual                As String = "="

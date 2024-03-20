@@ -16,6 +16,7 @@ Class Dictionary
     ' @license MIT
     ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
     Option Explicit
+    Option Base 0
 
     #Const UseScriptingDictionaryIfAvailable = True
 

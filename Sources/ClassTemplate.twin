@@ -1,0 +1,70 @@
+Class ClassTemplate
+    ' do find/replace on 'ClassTemplate' to name this class
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    Option Base 0
+    
+    Private Const My_TYPENAME                   As String = "ClassTemplate"
+    
+    Private Type State
+        InteralValue                            As Variant
+    End Type
+    
+    Private s                                   As State
+
+    
+    Private Type Properties
+        PublicValue                             As Variant
+    End Type
+    
+    Private p                                   As Properties
+    
+    
+    [DefaultMember]
+    Public Function Deb(ParamArray ipArgs() As Variant) As ClassTemplate
+        With New ClassTemplate
+            Return .ConstructInstance(VBA.CVar(ipArgs))
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipArgs As Variant) As ClassTemplate
+        ' do initialisation stuff
+        Return Me
+    End Function
+    
+    
+    Public Property Get PublicValue() As Variant
+        Return p.PublicValue
+    End Property
+    
+    Public Property Let PublicValue(ByRef ipPublicValue As Variant)
+        p.PublicValue = ipPublicValue
+    End Property
+    
+    Public Property Set PublicValue(ByRef ipPublicValue As Variant)
+        Set p.PublicValue = ipPublicValue
+    End Property
+    
+    
+    Public Property Get TypeName() As String
+        Return My_TYPENAME
+    End Property
+    
+    
+    Public Function Clone() As ClassTemplate
+        ' code to return a clone of 'Me'
+    End Function
+    
+    
+    Public Function ToString() As String
+        ' code to generate string representation of public data
+    End Function
+    
+    
+    Public Function ToArray() As Variant()
+        'code to return public data as array of variants
+    End Function
+
+End Class

@@ -1,0 +1,43 @@
+Module PootleMat
+
+    Option Base 0
+    Sub testmat()
+        Dim myM As Matrix = Matrix.Deb(Array(0, 2), Array(0, 2), Array(0, 2))
+        
+        Dim myArray(0 To 2, 0 To 2, 0 To 2) As Variant
+        
+        Dim myF As Long
+        For myF = 0 To 2
+            Dim myS As Long
+            For myS = 0 To 2
+                Dim myT As Long
+                For myT = 0 To 2
+                    myArray(myF, myS, myT) = 1 + myF * 10 + myS * 100 + myT * 1000
+                    myM.Item(idx(myF, myS, myT)) = 1 + myF * 10 + myS * 100 + myT * 1000
+                Next
+            Next
+        Next
+        
+        Dim myM2 As Matrix = Matrix.Deb.Bind(myArray)
+        
+        
+        For myF = 0 To 2
+            For myS = 0 To 2
+                For myT = 0 To 2
+                    If myM2.Item(Idx(myF, myS, myT)) <> myM.Item(Idx(myF, myS, myT)) Then
+                        Debug.Print "Array mismatch", myF, myS, myT, myM2(Idx(myF, myS, myT)), myM.Item(Idx(myF, myS, myT))
+                    End If
+                Next
+            Next
+        Next
+        
+        Debug.Print myM.Count
+        Debug.Print myM.Count(1)
+        Debug.Print myM.Count(2)
+        Debug.Print myM.Count(3)
+    
+    End Sub
+	
+
+   
+End Module

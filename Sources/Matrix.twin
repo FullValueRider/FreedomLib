@@ -1,0 +1,357 @@
+[Description("Matrix is a class that emulates a VBA array.  An external array may be bound to a Matrixobject")]
+Class Matrix
+    '## Issues
+    '
+    ' - Doesn't currently support For Each via IEnumVariant
+    ' - need to implement copyto to copy internal array to an external array
+    Option Explicit
+    Option Base 0
+    
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Creatable = True
+    
+    Private Const My_TYPENAME                   As String = "Matrix"
+    
+    Private Type State
+        
+        SABounds()                              As Long
+        SACurLoc()                              As Long
+        SAAddr                                  As LongPtr
+        
+        
+    End Type
+    
+    Private s                                   As State
+
+
+    Private Type properties
+        cDims                                   As Integer
+        Count                                   As Long
+        UsingInternalSA                         As Boolean
+        UsingExternalSA                        As Boolean
+    End Type
+    
+    Private p                                   As properties
+    
+    ' ipDims can be a mixture of longs or two item arrays (of longs)
+    ' a single long describes the size of a dimension with lbound of 0
+    ' an array of two items describes the lbound and ubound of a dimension
+    [DefaultMember]
+    Public Function Deb(ParamArray ipDims() As Variant) As Matrix
+        With New Matrix
+            Return .ConstructInstance(VBA.CVar(ipDims))
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipRanks As Variant) As Matrix
+    
+        ' check to see if input ranks can be used to form a legal safe array
+        ' if yes then sets up SABounds and SACurLoc.
+        ValidateRanks ipRanks
+        
+        If Not p.UsingInternalSA Then
+            Return Me
+        End If
+        
+        s.SAAddr = SafeArrayCreate(VT_VARIANT, p.cDims, Unsafe.SApvDAta(s.SABounds))
+        p.Count = 1
+        Dim myIndex As Long = 0
+        For myIndex = LBound(s.SABounds) To UBound(s.SABounds) - 1 Step 2
+            p.Count *= s.SABounds(myIndex)
+        Next
+        Return Me
+        
+    End Function
+    
+    Private Sub ValidateRanks(ByRef ipRanks As Variant)
+    ' if there are no ranks then exit
+        If TypeInfo.LacksItems(ipRanks) Then
+            p.UsingInternalSA = False
+            Exit Sub
+        End If
+        p.UsingInternalSA = True
+        p.cDims = TypeInfo.Count(ipRanks)
+        ' dimension the variables that hold the rgsaBounds 
+        ' and the read/write address
+        ' for SABounds we have 2 longs per dimension (Index = number of elements, Index+1 = lower bound)
+        ReDim s.SABounds((p.cDims * 2) - 1)
+        ' array used to pass dimensions to get/put value
+        ReDim s.SACurLoc(p.cDims - 1)
+         
+        ' check that each incoming rank is either a number or an array of at least two numbers
+        Dim myRank As Variant
+        Dim myIndex As Long = LBound(s.SABounds)
+        For Each myRank In ipRanks
+            Select Case True
+                Case TypeInfo.IsNumber(myRank)
+                        
+                    ValidateOneValueRank VBA.CLng(myRank)
+                    ' s.bounds is used to provide the data for rgsabounds 
+                    ' bounds are stored as a sequence of pairs when 
+                    ' index = number of elements in dimension
+                    ' index + 1 = lbound of the dimension
+                    
+                    ' for a single value rank, the value of rank is the number of elements in the dimension
+                    ' and the lbound is zero
+                    s.SABounds(myIndex) = myRank
+                    s.SABounds(myIndex + 1) = 0
+                    
+                Case TypeInfo.IsPArray(myRank)
+                    
+                    ' for an array rank there must betwoitemswhere the first Item is <= the second item
+                    ValidateArrayRank myRank
+                    s.SABounds(myIndex) = VBA.CLng(myRank(LBound(myRank) + 1) - myRank(LBound(myRank)) + 1)
+                    s.SABounds(myIndex + 1) = VBA.CLng(myRank(LBound(myRank)))
+                    
+                Case Else
+                    ' The variable cannot be used for Rank information
+                    Err.Raise 17 + vbObjectError, _
+                        CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                        "Invalid rank type: not number or array. Got " & VBA.TypeName(myRank)
+            
+            End Select
+            
+            myIndex += 2
+            
+        Next
+       
+    End Sub
+     
+     
+     Private Sub ValidateOneValueRank(ByVal ipRank As Long)
+         If ipRank <= 0 Then
+             Err.Raise 17 + vbObjectError, _
+                 CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                 "A single value dimension must be positive.  Got " & VBA.CStr(ipRank)
+         End If
+        
+     End Sub
+    
+     
+    Private Sub ValidateArrayRank(ByRef ipRank As Variant)
+        
+        If TypeInfo.IsNotPArray(ipRank) Then
+            Err.Raise 17 + vbObjectError, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                "Rank array: Lbound must be <= Ubound. Got " & VBA.CStr(ipRank(LBound(ipRank))) & ", " & VBA.CStr(ipRank(LBound(ipRank) + 1))
+        End If
+        
+        If Unsafe.SADims(ipRank) > 1 Then
+            Err.Raise 17 + vbObjectError, _
+            CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+            "Rank array must be one dimension.  Got " & Unsafe.SADims(ipRank) & " dimensions"
+        End If
+        
+        If If UBound(ipRank, 1) - LBound(ipRank, 1) = 0 Then
+            Err.Raise 17 + vbObjectError, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                "Rank array has only 1 value. Expecting 2"
+        End If
+        
+        If TypeInfo.IsNotNumber(ipRank(LBound(ipRank))) Then
+            Err.Raise 17 + vbObjectError, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                "Rank array: First value is not a number.  Got " & VBA.TypeName(ipRank(LBound(ipRank))) & ": " & VBA.CStr(ipRank(LBound(ipRank)))
+        
+        End If
+        
+        If TypeInfo.IsNotNumber(ipRank(LBound(ipRank) + 1)) Then
+            Err.Raise 17 + vbObjectError, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
+                "RankArray: Second value is not a number.  Got " & VBA.TypeName(ipRank(LBound(ipRank) + 1)) & ": " & VBA.CStr(ipRank(LBound(ipRank) + 1))
+        End If
+        
+        ' The rank is acceptable for defining a dimension in the interal safearray
+        
+    End Sub
+     
+    Private Sub Class_Terminate()
+        
+        ' don't run the Terminate code if the instance is the predeclaredid
+        If Me Is Matrix Then
+            Exit Sub
+        End If
+        
+        'if an internal  safearray exists then destroy it
+        If p.UsingInternalSA Then
+            ' remove the internal safe array
+            SafeArrayDestroy ByVal s.SAAddr
+            Exit Sub
+        End If
+        
+        
+        ' if we are bound to an external array then unlock it
+        If p.UsingExternalSA Then
+           Unsafe.SafeArrayUnlock ByVal s.SAAddr
+        End If
+        
+    End Sub
+    
+    
+    Public Function IsBound() As Boolean
+        Return p.UsingExternalSA
+    End Function
+    
+    
+    Public Function IsInitialised() As Boolean
+        
+        If p.UsingInternalSA Then
+            Return True
+        End If
+        
+        If p.UsingExternalSA Then
+            Return True
+        End If
+        
+        Return False
+        
+    End Function
+    
+    
+    Public Function Bind(ByRef ipArray As Variant) As Matrix
+        
+        Contract.IsPArray ipArray, CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        
+        If p.UsingInternalSA Then
+            Err.Raise FLIB_Err, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName, _
+                "Cannot bind: Internal array exists"
+        End If
+        
+        If p.UsingExternalSA Then
+            Err.Raise FLIB_Err, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName, _
+                "Already bound"
+        End If
+        
+        s.SAAddr = Unsafe.SAAddr(ipArray)
+        p.cDims = Unsafe.SADims(ipArray)
+        ReDim s.SABounds((p.cDims * 2) - 1)
+        ReDim s.SACurLoc(p.cDims - 1)
+        
+        Dim myBoundsIndex As Long = 0
+        Dim myRank As Long
+        
+        For myRank = 1 To p.cDims
+            s.SABounds(myBoundsIndex + 1) = LBound(ipArray, myRank)
+            s.SABounds(myBoundsIndex) = UBound(ipArray, myRank) - LBound(ipArray, myRank) + 1
+            myBoundsIndex += 2
+        Next
+        
+        Return Me
+        
+    End Function
+    
+    Public Function SetItem(ParamArray ipLoc() As Variant) As Matrix
+        Dim myloc As Variant = ipLoc
+        ValidateLoc ipLoc
+        
+    End Function
+
+    Public Function Ranks() As Long
+        Return p.cDims
+    End Function
+    
+    Public Function Bounds() As Variant
+        Dim myBounds() As Long
+        ReDim myBounds(1 To p.cDims)
+        
+        Dim myIndex As Long = 0
+        Dim myBoundsIndex As Long = 1
+        For myIndex = 0 To UBound(s.SABounds) - 1 Step 2
+            
+            myBounds(myBoundsIndex) = Array(s.SABounds(myIndex + 1), s.SABounds(myIndex) + s.SABounds(myIndex + 1) - 1)
+            myBoundsIndex += 1
+        Next
+    End Function
+    /*
+        The property Item for Matrix requires that we can specify a variable number of paramters
+        to defined the location of an item in an array.  The let and set methods of a property 
+        require that the value to be let/set is the last param in a pameter list.  Hence it is not 
+        possile to use a ParamArray to specify the address followed by a value.
+        Hence we use a function (Helper.Loc) to return a paramarray and this legalise the last param
+        
+        i.e. 
+        ```
+        Public property Let Item(Paramarray ipLoc() as variant, byval ipValue as variant)
+        ```    
+        is not allowed but
+        ```
+        Public proeprty Let Item (byval ipLoc as variant, byval ipValue as Variant)
+        ```
+        is permitted as
+        ```
+        MatrixInstance.Item(Loc(x,y,z)) = ipValue
+        ```
+    
+    */
+    Public Property Get Item(ByRef ipLoc As Variant) As Variant
+        Dim myLoc As Variant = ipLoc
+        ValidateLoc myLoc
+        Dim myv As Variant = 0
+        SafeArrayGetElement ByVal s.SAAddr, ByVal Unsafe.SApvDAta(s.SACurLoc), ByVal VarPtr(myv)
+        Return myv
+    End Property
+    
+    Public Property Let Item(ByRef ipLoc As Variant, ByVal ipValue As Variant)
+        Dim myLoc As Variant = ipLoc
+        ValidateLoc myLoc
+        SafeArrayPutElement ByVal s.SAAddr, ByVal Unsafe.SApvDAta(s.SACurLoc), ByVal VarPtr(ipValue)
+    End Property
+    
+    Public Property Set Item(ByRef ipLoc As Variant, ByVal ipValue As Variant)
+        Dim myLoc As Variant = ipLoc
+        ValidateLoc myLoc
+        SafeArrayPutElement ByVal s.SAAddr, ByVal Unsafe.SApvDAta(s.SACurLoc), ByVal VarPtr(ipValue)
+    End Property
+    
+    ' ensures that loc contains parametersthatare with th ebounds of the array
+    Private Sub ValidateLoc(ByRef ipLoc As Variant)
+        
+        Dim myLoc As String = CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        
+        Contract.IsPArray ipLoc, myLoc, "Invalid array address (Loc)"
+        Contract.IsValue Unsafe.SADims(ipLoc), 1&, myLoc, "Invalid number of dimensions.  Expecting 1.  Got " & Unsafe.SADims(ipLoc)
+        
+        ' A complicating factor for location is that the indeces must be specified in the reverse order
+        ' to the equivalent dim statement.  This requirement is clearly specified at
+        ' https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-safearraygetelement
+        ' https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-safearrayputelement
+        
+        Dim myLocIndex As Long = p.cDims - 1
+        Dim myrgsaBoundsIndex As Long = 0
+        Dim myItem As Variant
+        For Each myItem In ipLoc
+            
+            Contract.IsNumber myItem, myLoc
+            Dim myLong As Long = VBA.CLng(myItem)
+            
+            Contract.IsInNumRange myLong, s.SABounds(myrgsaBoundsIndex + 1), s.SABounds(myrgsaBoundsIndex) + s.SABounds(myrgsaBoundsIndex + 1) - 1, myLoc
+            s.SACurLoc(myLocIndex) = VBA.CLng(myItem)
+            
+            myLocIndex -= 1
+            myrgsaBoundsIndex += 2
+            
+        Next
+        
+    End Sub
+    
+    
+    Public Function Count(Optional ipRank As Long = 0) As Long
+        Contract.IsInNumRange ipRank, 0, p.cDims, CurrentProjectName & tbPeriod & CurrentComponentName & tbPeriod & CurrentProcedureName
+        If ipRank = 0 Then
+            
+            Return p.Count
+        Else
+            ' SABounds stores the number of elements followed by the lower bound in a vector of longs
+            Return s.SABounds((ipRank - 1) * 2)
+        End If
+    End Function
+    
+    
+    Public Property Get TypeName() As String
+        Return My_TYPENAME
+    End Property
+    
+ End Class

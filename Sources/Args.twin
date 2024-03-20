@@ -1,19 +1,23 @@
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
-[ Description (" A classs to replace ParamArray so that we can have a specific Type rather than variant") ]
+[Description(" A classs to facilitate using a ParamArray under the guise of a specific type to avoid downside of variant for overloading methods")]
+' It is intended that Args is used as a carrier for a paramarray and hence its methods are readonly
 Class Args
 
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
+    Option Base 0
     
     Private Type Properties
-    	Val                                     As Variant
-        Splat                                   As Boolean
+    	Cargo                                   As Variant
+        Count                                   As Long
+        FirstIndex                              As Long
+        LastIndex                               As Long
     End Type
     
     Private p                                   As Properties
     
-    [ DefaultMember ]
+    [DefaultMember]
     Public Function Deb(ParamArray ipParamarray() As Variant) As Args
     	With New Args
         	Return .ConstructInstance(VBA.CVar(ipParamarray))
@@ -21,80 +25,92 @@ Class Args
     End Function
     
     Friend Function ConstructInstance(ByRef ipFPA As Variant) As Args
-    	
-        p.Splat = False
-        If Not IsArrayInitialized(ipFPA) Then
-        	p.Val = Empty
-        End If
-        
+    	' Indexes are adjusted so that they begin at 1
         If LBound(ipFPA) > UBound(ipFPA) Then
-        	p.Val = Empty
+        	p.Cargo = Empty
+            p.Count = -1
+            p.FirstIndex = 1
+            p.LastIndex = -1  ' value less than Lbound means that the body of a for next loop will not execute
+        Else
+            p.Cargo = ipFPA
+            p.Count = UBound(ipFPA) - LBound(ipFPA) + 1
+            p.FirstIndex = LBound(ipFPA) + 1  'ipFPA will start at 0 irrespective of option base
+            p.LastIndex = UBound(ipFPA) + 1
         End If
-        
-        p.Val = ipFPA
         
         Return Me
         
     End Function
 
+    [Description("If Paramarray contains a single item which is an array then Paramarray is replaced Paramarray(0)")]
     Public Function Splat() As Args
-    	Sys.Splat p.Val
-        Return Me
+    	If p.Count = 1 And VBA.IsArray(p.Cargo(0)) Then
+            ConstructInstance p.Cargo(0)
+            ' the array at p.Cargo(0) may have bounds other then 0 to count -1
+            ' so we redim to get to the desired 0 to count-1 indexing
+            ' even though externally it appears as 1 to count (via Item property).
+            ReDim Preserve p.Cargo(0 To p.Count - 1)
+    	End If
     End Function
     
-    Public Function IsArray() As Boolean
-        Return Not IsEmpty(p.Val)
-    End Function
-    
-    Public Function IsNotArray() As Boolean
-    	Return VBA.IsEmpty(p.Val)
-    End Function
     
     Public Function HoldsItems() As Boolean
-    	Return (Not VBA.IsEmpty(p.Val))
+    	Return p.Count > 0
     End Function
     
     Public Function HoldsOneItem() As Boolean
-    	If VBA.IsEmpty(p.Val) Then
-        	Return False
-        ElseIf LBound(p.Val) = UBound(p.Val) Then
-            Return True
-        Else
-            Return False
-    	End If
+    	Return p.Count = 1
     End Function
     
     Public Function LacksItems() As Boolean
-    	Return VBA.IsEmpty(p.Val)
+    	Return p.Count < 1
     End Function
+    
     
     Public Function Count() As Long
-    	If VBA.IsEmpty(p.Val) Then
-        	Return -1
-        Else
-            Return UBound(p.Val) - LBound(p.Val) + 1
-    	End If
-        
+    	Return p.Count
     End Function
     
+    
     Public Function FirstIndex() As Variant
-    	If VBA.IsEmpty(p.Val) Then
-        	Return Null
-        Else
-            Return UBound(p.Val)
-    	End If
+    	Return p.FirstIndex
     End Function
     
     Public Function LastIndex() As Long
-    	If VBA.IsEmpty(p.Val) Then
-        	Return Null
-        Else
-            Return UBound(p.Val)
-    	End If
+    	Return p.LastIndex
     End Function
     
-    Public Property Get Value() As Variant
-    	Return p.Val
+    
+    Public Property Get Items() As Variant
+    	Return p.Cargo
     End Property
+    
+    
+    Public Property Get Item(ByRef ipIndex As Long) As Variant
+    	If InBounds(ipIndex - 1) Then
+            Return p.Cargo(ipIndex - 1)
+        End If
+    End Property
+    
+    
+    Public Property Set Item(ByRef ipIndex As Long, ByRef ipItem As Variant)
+        If InBounds(ipIndex - 1) Then
+            Set p.Cargo(ipIndex - 1) = ipItem
+        End If
+    End Property
+    
+    Public Property Let Item(ByRef ipIndex As Long, ByRef ipItem As Variant)
+        If InBounds(ipIndex - 1) Then
+           p.Cargo(ipIndex - 1) = ipItem
+        End If
+    End Property
+    
+    
+    Private Function InBounds(ByRef ipIndex As Long) As Boolean
+    	If ((ipIndex >= p.FirstIndex) AndAlso (ipIndex <= p.LastIndex)) Then
+        	Return True
+    	End If
+        Err.Raise 17
+    End Function
     
 End Class

@@ -1,11 +1,12 @@
 Module TestStrs
 
     Option Explicit
+    option base 0
     Option Private Module
     Public Sub StrsTests()
  
         #If twinbasic Then
-            Debug.Print CurrentProcedureName, vbTab, vbTab,
+            Debug.Print CurrentComponentName,
         #Else
             GlobalAssert
             VBATesting = True
@@ -59,7 +60,7 @@ Module TestStrs
         Test13c_Inc_FullROllover
         Test13d_Inc_NonIncMidString
     
-        Debug.Print "Testing completed"
+        Debug.Print vbTab, vbTab, vbTab, "Testing completed"
 
     End Sub
 

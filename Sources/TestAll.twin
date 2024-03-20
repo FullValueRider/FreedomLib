@@ -1,23 +1,21 @@
 Module TestAll
 
     Option Explicit
+    Option Base 0
     Public Sub Main()
   
         Dim myTime As Variant: myTime = Timer
      
         Debug.Print "Testing started"
         Debug.Print
-        ' base module
         
-
-        ' strutils module
         TestStrs.StrsTests
+        TestTypeInfo.TypeInfoTests
+        TestVar.VarTests
         TestStringifier.StringifierTests
         TestFormatter.FormatterTests
-        
-        ' reflection module
-        TestTypeInfo.TypeInfoTests
-        'TestVar.VarTests
+        TestMatrix.MatrixTests
+        'TestIterItems.IterItemsTests
         
         Debug.Print
         Debug.Print "Testing Finished  " & Timer - myTime & " seconds."

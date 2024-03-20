@@ -9,7 +9,8 @@ Class TypeMarkup
     '@Folder("VBALib.Fmt")
     '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
     Option Explicit
-
+    Option Base 0
+    
     Const MY_NAME                   As String = "TypeMarkup"
     Private Type Properties
 

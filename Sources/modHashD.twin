@@ -1,7 +1,7 @@
 Module modHashD
 
    Option Explicit
- 
+   Option Base 0
     ' commented code below moved to Unsafe
 '    Public Type SAFEARRAY1D
 '      cDims                 As Integer

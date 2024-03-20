@@ -1,13 +1,16 @@
-[ Description ("A Module for things that should have been part of VBA") ]
+[Description("A Module for things that should have been part of VBA")]
 Class Sys
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
     Option Explicit
+    option base 0
+
     
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 ' Constants
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    Private Const MY_LOC                            As String = "FreedomLib.FBase.Sys."
 
     Public Const MaxByte                            As Byte = &HFF
     Public Const MinByte                            As Byte = &H00
@@ -53,83 +56,11 @@ Class Sys
         Unsafe.VariantCopy myTemp, iopLHS
         Unsafe.VariantCopy iopLHS, iopRHS
         Unsafe.VariantCopy iopRHS, myTemp
-    
-        ' I'd be surprised if there wasn't a Declare for this action 
-    '     Dim myTemp As Variant
-    '     If VBA.IsObject(iopLHS) Then
-    '         Set myTemp = iopLHS
-    '     Else
-    '         myTemp = iopLHS
-    '     End If
-        
-    '     If VBA.IsObject(iopRHS) Then
-    '         Set iopLHS = iopRHS
-    '     Else
-    '         iopLHS = iopRHS
-    '     End If
-        
-    '     If VBA.IsObject(myTemp) Then
-    '         Set iopRHS = myTemp
-    '     Else
-    '         iopRHS = myTemp
-    '     End If
             
     End Sub
+
     
-    '@Description("A test for 'no value' that works for all Types")
-    Public Function Occupied _
-    ( _
-        ByVal ipValue As Variant, _
-        ByRef ipLocation As String, _
-        Optional ByRef ipMessage As String = vbNullString, _
-        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
-    ) As Boolean
-    Attribute Occupied.VB_Description = "A test for 'no value' that works for all Types"
-        ' no value mean that the variable is 0, empty, null nothing, or f
-        Select Case True
-            Case VBA.IsArray(ipValue): 
-                     If Not IsArrayInitialized(ipValue) Then
-                             Occupied = False
-                     Else
-                        If LBound(ipValue) > UBound(ipValue) Then
-                            Occupied = False
-                        Else
-                            Occupied = True
-                        End If
-                     End If
-            Case VBA.IsObject(ipValue):         Occupied = Sys.IsNotNothing(ipValue)
-            Case Sys.IsString(ipValue):         Occupied = VBA.Len(ipValue) <> 0
-            Case Sys.IsNumber(ipValue):         Occupied = ipValue <> 0
-            Case IsEmpty(ipValue):              Occupied = False
-            Case IsNull(ipValue):               Occupied = False
-            Case IsError(ipValue):              Occupied = ipValue.Number <> 0 ' is this legal statement?
-            Case Sys.IsNumber(ipValue):             Occupied = ipValue <> 0
-            Case Sys.IsBoolean(ipValue)
-            Case Else:                          
-                If VBA.TypeName(ipValue) = "Boolean" Then
-                    Occupied = (ipValue = True)
-                End If
-        End Select
-    
-        If Occupied Then
-            Exit Function
-        End If
-    
-        If ipReportBackAction = m_Continue Then
-            Exit Function
-        End If
-    
-        If VBA.Len(ipMessage) = 0 Then
-            ipMessage = "Expecting an 'occupied' Value. Got " & VBA.TypeName(ipValue) & " of value " & VBA.CStr(ipValue)
-        End If
-    
-        Err.Raise 17 + vbObjectError, _
-            MY_LIB & ipLocation, _
-            ipMessage
-        
-    End Function
-    
-    [ Description ("Returns a one dimension array by iterating th einput array using for each") ]
+    [Description("Returns a one dimension array by iterating th einput array using for each")]
     Public Function ToArray1D(ByRef ipArray As Variant) As Variant
     	Dim myC As Collection = New Collection
         Dim myItem As Variant
@@ -139,7 +70,8 @@ Class Sys
         Return myC.Items
     End Function
     
-    [ Description ("Resturn as collection populated by using for each over the input array") ]
+    
+    [Description("Resturn as collection populated by using for each over the input array")]
     Public Function ToCollection(ByRef ipArray As Variant) As Variant
     	Dim myC As Collection = New Collection
         Dim myItem As Variant
@@ -148,7 +80,9 @@ Class Sys
         Next
         Return myC
     End Function
-    [ Description (" Returns an mscorlib ArrayList populated by using for each over the input array") ]
+    
+    
+    [Description(" Returns an ArrayList populated by using for each over the input array")]
     Public Function ToArrayList(ByRef ipArray As Variant) As Variant
     	Dim myAL As ArrayList = New ArrayList
         Dim myItem As Variant
@@ -158,8 +92,8 @@ Class Sys
         Return myAL
     End Function
     
-    [ Description ("Returns a Scripting.Dictionary populated using for each over the input array.  The array items are keys, the items are the Dictionary count when the key was added") ]
-    Public Function ToDictionaryKeysWithCount(ByRef ipArray As Variant) As Dictionary
+    [Description("Returns a Scripting.Dictionary populated using for each over the input array.  The array items are keys, the items are the Dictionary count when the key was added")]
+    Public Function ToDictionaryItemsVSCount(ByRef ipArray As Variant) As Dictionary
     	Dim myD As Dictionary = New Dictionary
         Dim myItem As Variant
         For Each myItem In ipArray
@@ -168,8 +102,8 @@ Class Sys
         Return myD
     End Function
     
-    [ Description ("Returns a Scripting.Dictioanry populated using for each over the input array. Keys are the Dictionary count when the Items were added") ]
-    Public Function ToDictionaryWithCountKeys(ByVal ipArray As Variant) As Dictionary
+    [Description("Returns a Scripting.Dictioanry populated using for each over the input array. Keys are the Dictionary count when the Items were added")]
+    Public Function ToDictionaryCountVsItems(ByVal ipArray As Variant) As Dictionary
     	Dim myD As Dictionary = New Dictionary
         Dim myItem As Variant
         For Each myItem In ipArray
@@ -178,107 +112,72 @@ Class Sys
         Return myD
     End Function
     
-    [ Description ("Is String Method that is local to Allow rather than provided by tbReflectionLib") ]
-    Friend Function IsString(ByRef ipString As Variant) As Boolean
-        
-        If VBA.IsObject(ipString) Then
-            Return False
-        End If
-        
-        If VBA.VarType(ipString) = vbString Then
-            Return True
-        End If
-        
-        Return False
-    
-    End Function
-    
-    Friend Function IsNotNothing(ByRef ipItem As Variant) As Boolean
-        Return (Not ipItem Is Nothing)
-    End Function
+  
 
-
-    Friend Function IsNumber(ByRef ipitem As Variant) As Boolean
-        If IsString(ipitem) Then
-            Return False
-        End If
-        
-        If VBA.IsNumeric(ipitem) Then
-            Return True
-        End If
-        
-        Return False
-        
-    End Function
-    
-    Public Function IsBoolean(ByRef ipValue As Variant) As Boolean
-    	Return VBA.TypeName(ipValue) = "Boolean"
-    End Function
-
-    Public Function ObjVal(ByRef ipObject As Object) As Variant
+    ' Public Function ObjVal(ByRef ipObject As Object) As Variant
     	
-        Dim myA() As Variant
+    '     Dim myA() As Variant
         
-        On Error Resume Next
-        myA = Array(ipObject.ToString)
-        If Err.Number = 0 Then
-        	On Error GoTo 0
-        	Return Array(True, myA(0))
-        End If
+    '     On Error Resume Next
+    '     myA = Array(ipObject.ToString)
+    '     If Err.Number = 0 Then
+    '     	On Error GoTo 0
+    '     	Return Array(True, myA(0))
+    '     End If
         
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array(ipObject.ToArray)
-        If Err.Number = 0 Then
-        On Error GoTo 0
-            Return Array(True, myA(0))
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array(ipObject.ToArray)
+    '     If Err.Number = 0 Then
+    '     On Error GoTo 0
+    '         Return Array(True, myA(0))
+    '     End If
             
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array(ipObject.ToCollection)
-        If Err.Number = 0 Then
-            On Error GoTo 0
-        	Return Array(True, myA(0))
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array(ipObject.ToCollection)
+    '     If Err.Number = 0 Then
+    '         On Error GoTo 0
+    '     	Return Array(True, myA(0))
+    '     End If
         
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array(ipObject.ToSeq)
-        If Err.Number = 0 Then
-            On Error GoTo 0
-            Return Array(True, myA(0))
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array(ipObject.ToSeq)
+    '     If Err.Number = 0 Then
+    '         On Error GoTo 0
+    '         Return Array(True, myA(0))
+    '     End If
         
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array(ipObject.Json)
-        If Err.Number = 0 Then
-            On Error GoTo 0
-            Return Array(True, myA(0))
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array(ipObject.Json)
+    '     If Err.Number = 0 Then
+    '         On Error GoTo 0
+    '         Return Array(True, myA(0))
+    '     End If
         
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array(ipObject.value)
-        If Err.Number = 0 Then
-        	Return Array(True, myA(0))
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array(ipObject.value)
+    '     If Err.Number = 0 Then
+    '     	Return Array(True, myA(0))
+    '     End If
         
-        On Error GoTo 0
-        On Error Resume Next
-        myA = Array((ipObject)) ' Attemp to force defaultmemeber action
-        If Err.Number = 0 Then
-        	If VBA.TypeName(myA(0)) <> VBA.TypeName(ipObject) Then
-            	On Error GoTo 0
-                Return Array(True, myA(0))
-        	End If
-        End If
+    '     On Error GoTo 0
+    '     On Error Resume Next
+    '     myA = Array((ipObject)) ' Attemp to force defaultmemeber action
+    '     If Err.Number = 0 Then
+    '     	If VBA.TypeName(myA(0)) <> VBA.TypeName(ipObject) Then
+    '         	On Error GoTo 0
+    '             Return Array(True, myA(0))
+    '     	End If
+    '     End If
         
-        On Error GoTo 0
-        Return Array(False, VBA.ObjPtr(ipObject))
+    '     On Error GoTo 0
+    '     Return Array(False, VBA.ObjPtr(ipObject))
         
-    End Function
+    ' End Function
     
     ' One of the many issues with VBA is that it supports methods with a variable number of parameters via the ParamArray.,
     ' However, there is no 'splat' operater so Paramarrays cannot be forwarded to methods expecting a paramArray
@@ -287,12 +186,12 @@ Class Sys
     ' On the occasion that single item processing is not required the Item should be encapsulated as an array
     ' e.g. Method(Item), use Method(Array(Item)).
 
-    '@Description("If paramarray is an array which contains a single item which is an array, it is assumend to be a forwarded paramarray, so paramarray is replaced by paramArray(0)")
+    [Description("If paramarray is an array which contains a single item which is an array, it is assumend to be a forwarded paramarray, so paramarray is replaced by paramArray(0)")]
     Public Sub Splat(ByRef iopFPA As Variant)
-    Attribute Splat.VB_Description = "If paramarray is an array which contains a single item which is an array, it is assumend to be a forwarded paramarray, so paramarray is replaced by paramArray(0)"
-        ' splat is a reference to the splat (ellipsis)  operator '...' used in some other languages.
     
-        Allow.InitialisedArray iopFPA, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        ' splat is a reference to the splat (spread/ellipsis)  operator '...' used in some other languages.
+    
+        Contract.IsPArray iopFPA, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
         
         ' return iopFPA(0) is iopFPA only holds one item
         If UBound(iopFPA) = LBound(iopFPA) Then
@@ -302,5 +201,32 @@ Class Sys
         End If
     
     End Sub
+    
+    ' deprecated as type info now merged which provides this information
+    ' Public Function GetArrayInfo(ByRef ipItem As Variant) As ArrayInfo
+    
+    '     Contract.IsPArray ipItem, MY_LOC & CurrentProcedureName
+    '     Dim myInfo As ArrayInfo
+    '     myInfo.Ranks = Unsafe.ArrayDims(ipItem)
+    '     ReDim myInfo.Count(0 To myInfo.Ranks)
+    '     ReDim myInfo.FirstIndex(1 To myInfo.Ranks)
+    '     ReDim myInfo.LastIndex(1 To myInfo.Ranks)
+        
+    '     Dim myIndex As Long
+    '     Dim myCount As Long = 1
+    '     For myIndex = 1 To myInfo.Ranks
+             
+    '         With myInfo
+    '             .FirstIndex(myIndex) = LBound(ipItem, myIndex)
+    '             .LastIndex(myIndex) = UBound(ipItem, myIndex)
+    '             .Count(myIndex) =.LastIndex(myIndex) -.FirstIndex(myIndex) + 1
+    '             .Count(0) *=.Count(myIndex)
+    '         End With
+                            
+    '     Next
+        
+    '     Return myInfo
+        
+    ' End Function
     
 End Class

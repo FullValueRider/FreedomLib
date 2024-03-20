@@ -1,0 +1,438 @@
+Class Contract
+
+    Option Explicit
+    Option Base 0
+    
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Creatable = True
+
+    ' The report back action defines what happens when the Allow test fails
+    ' Currently two options exist
+    '
+    ' - return false
+    ' - raise an error
+    Public Enum e_AllowReportBackAction
+        m_First = 0
+        m_Continue = e_AllowReportBackAction.m_First
+        m_Last
+        m_RaiseError = m_last
+    End Enum
+
+  
+    Private Sub class_initialize()
+        If Me IsNot Contract Then
+            Err.Raise 17 + vbObjectError, _
+                CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName, _
+                "Class Contract is intended for static use only.  Instances of Class Contract are not permitted"
+        End If
+    End Sub
+    
+    [Description("Stops program by raising the specifie error")]
+    Private Sub RaiseAnError(ByRef ipLocation As String, ByVal ipMessage As String)
+
+        Err.Raise 17 + vbObjectError, _
+           FLIB & ipLocation, _
+            ipMessage
+    End Sub
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsValue(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem = ipValue)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value matching " & VBA.CStr(ipValue) & ". Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsNotUDT(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = TypeInfo.IsNotUDT(ipItem)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "User Defined Types cannot be passed in Variant parameters"
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsNotValue(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem <> ipValue)
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value that does not match reference " & VBA.CStr(ipValue) & ". Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsMT0(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+    	
+    	Dim myR As Boolean = (ipItem > 0)
+        If myR Then
+        	Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+        	Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+        	ipMessage = "Expecting value greater than 0. Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    [Description("True if ipItem is more than negative 1 ( greter then or equal to 0")]
+    Public Function IsLTEQ(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Variant = (ipItem <= ipValue)
+        If myR Then
+            Return True
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value less than 0). Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    [Description("True if ipItem is Less than zero")]
+    Public Function IsLT(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem < ipValue)
+        If myR Then
+            Return True
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value less then 0. Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is Less than zero")]
+    Public Function IsMTEQ(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem >= 0)
+        If myR Then
+            Return True
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value less then 0. Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is Less than zero")]
+    Public Function IsMT(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem > 0)
+        If myR Then
+            Return True
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value less then 0. Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if array is populated")]
+    Public Function IsPArray(ByRef ipArray As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myResult As Boolean = True
+        If Not VBA.IsArray(ipArray) Then
+        	myResult = False
+            If VBA.Len(ipMessage) = 0 Then
+                ipMessage = "Expecting a populated array. Got Type " & VBA.TypeName(ipArray)
+            End If
+        End If
+        
+        If Not VBA.IsArrayInitialized(ipArray) Then
+        	myResult = False
+            If VBA.Len(ipMessage) = 0 Then
+                ipMessage = "Expecting an allocated array"
+            End If
+        End If
+        
+        If UBound(ipArray, 1) < LBound(ipArray, 1) Then
+           myResult = False
+           If VBA.Len(ipMessage) = 0 Then
+               ipMessage = "Expecting an allocated array"
+           End If
+        End If
+       
+        If myResult Then
+            Return myResult
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myResult
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Invalid: Not a populated array"
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+   
+    [Description("Returns True if ipItem is True")]
+    Public Function IsTrue _
+    ( _
+        ByVal ipTrue As Boolean, _
+        ByRef ipLocation As String, _
+        Optional ByRef ipMessage As String = vbNullString, _
+        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
+    ) As Boolean
+
+        IsTrue = ipTrue
+    
+        If IsTrue Then
+            Exit Function
+        End If
+    
+        If ipReportBackAction = m_Continue Then
+            Exit Function
+        End If
+    
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "Test did not yield 'True'"
+        End If
+     
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    [Description("Returns True if ipItem is False")]
+    Public Function IsFalse _
+    ( _
+        ByVal ipFalse As Boolean, _
+        ByRef ipLocation As String, _
+        Optional ByRef ipMessage As String = vbNullString, _
+        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
+    ) As Boolean
+    
+        IsFalse = ipFalse
+    
+        If IsFalse = False Then
+            Exit Function
+        End If
+    
+        If ipReportBackAction = m_Continue Then
+            Exit Function
+        End If
+    
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "Test did not yield 'False'"
+        End If
+     
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+
+
+    Public Function IsNumber _
+    ( _
+        ByVal ipNumber As Variant, _
+        ByRef ipLocation As String, _
+        Optional ByVal ipMessage As String = vbNullString, _
+        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
+    ) As Boolean
+
+        Dim myNumber As Boolean = TypeInfo.IsNumber(ipNumber)
+    
+        If myNumber Then
+            Exit Function
+        End If
+    
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Exit Function
+        End If
+    
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "Expecting a number. Got " & VBA.CStr(VBA.TypeName(ipNumber))
+        End If
+    
+        RaiseAnError ipLocation, ipMessage
+    
+    End Function
+
+
+    [Description("True if the test number is within the specified range(>=Low and <= High)")]
+    Public Function IsInNumRange _
+    ( _
+        ByRef ipTest As Variant, _
+        ByRef ipLow As Variant, _
+        ByRef ipHigh As Variant, _
+        ByRef ipLocation As String, _
+        Optional ByRef ipMessage As String = vbNullString, _
+        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
+    ) As Boolean
+
+        Dim myTest As Decimal = ipTest
+        Dim myLow As Decimal = ipLow
+        Dim myHigh As Decimal = ipHigh
+        Dim myR As Boolean = ((ipTest >= ipLow) And (ipTest <= ipHigh))
+        
+        If myR Then
+            Return myR
+        End If
+    
+        If ipReportBackAction = m_Continue Then
+            Return myR
+        End If
+    
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "Not in range " & VBA.CStr(ipLow) & " to " & VBA.CStr(ipHigh) & ". Got " & VBA.CStr(ipTest)
+        End If
+    
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if the test number is within the specified range(>=Low and <= High)")]
+    Public Function IsNotInNumRange _
+    ( _
+        ByRef ipTest As Variant, _
+        ByRef ipLow As Variant, _
+        ByRef ipHigh As Variant, _
+        ByRef ipLocation As String, _
+        Optional ByRef ipMessage As String = vbNullString, _
+        Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
+    ) As Boolean
+
+        Dim myTest As Decimal = ipTest
+        Dim myLow As Decimal = ipLow
+        Dim myHigh As Decimal = ipHigh
+        Dim myR As Boolean = ((ipTest < ipLow) Or (ipTest > ipHigh))
+        
+        If myR Then
+            Return myR
+        End If
+    
+        If ipReportBackAction = m_Continue Then
+            Return myR
+        End If
+    
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "Not in range " & VBA.CStr(ipLow) & " to " & VBA.CStr(ipHigh) & ". Got " & VBA.CStr(ipTest)
+        End If
+    
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+
+    [Description("Returns true if the variable type has an Flib Id")]
+    Public Function HasId(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ByRef ipMessage As String = vbNullString, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myIds As Variant
+        Dim myR As Boolean = TypeInfo.TryGetIds(ipItem, myIds)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "No Id assigned for Type" & VBA.TypeName(ipItem)
+        End If
+    
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    [Description("Returns true if the variable type has an Flib Id")]
+    Public Function HasNoId(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ByRef ipMessage As String = vbNullString, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myIds As Variant
+        Dim myR As Boolean = (Not TypeInfo.TryGetIds(ipItem, myIds))
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.Len(ipMessage) = 0 Then
+            ipMessage = "FreedomLib type assigned.  Name of " & TypeInfo.Name(ipItem)
+        End If
+    
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+End Class
