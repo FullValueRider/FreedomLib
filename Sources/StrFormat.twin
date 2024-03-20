@@ -1,0 +1,503 @@
+Class Formatter
+
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Attribute VB_Description = "Class Fmt enables substitution of variables and control characters in strings using fields delineated by {} markers."
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("Strings")
+    '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    '=========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    ' Code line limit should be 120 characters.
+    ' Comment line limit should be 80 characters
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+
+
+    '@ModuleDescription("Class Format enables substitution of variables and control characters in strings using fields delineated by {} markers.")
+
+    ' This module enables fields within strings which represent variables or
+    ' control characters.
+    '
+    ' Variables are indicated by {x} where x is a positive integer.
+    ' e.g.
+    '       Fmt("this string {0} {1}", "Hello", 9)
+    '
+    ' gives 'this string Hello 9'
+    '
+    ' Layout fields represent control characters and are of the form {zz(x)}
+    
+    '  x  = an optional positive integer to indicate the number of times the control character is repeated.
+     
+    '   zz can be
+    '       nl = new line
+    '       nt = newline(s) followed by a tab (x applies to the newline only)
+    '       tb = tab
+    '       sq = single ordinary quote
+    '       dq = double ordinary quote
+    '       so = single smart quote - open
+    '       sc = single smart quote - close
+    '       do = double smart quote - open
+    '       dc = double smart quote - close
+    '
+    ' Formatted strings can include Type infomation using the Mode method.
+    ' The available modes are described by the e_CompareMode enumeration
+    ' which is located in Comparer.
+    '
+    ' The string output can also be modfied by the use of the varias Markup methods
+    ' Markup methods are defined in the Stringifier class
+    ' The Markups set the bounding and separating strings for Type information, and ItemsHolder types
+    ' e.g defefault arrays are delineated by [] and items withing an array are separated by a ,
+    ' Array(1,2,3,4,5) has a default output of  [1,2,3,4,5]
+    ' objects, such a seq use {} and ,
+    ' SeqA(1,2,3,4,5) has a default output of {1,2,3,4,5}
+    '
+    ' 
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    Option Explicit
+
+
+    Private Const MY_TYPENAME                       As String = "Format"
+    Private Type State
+
+        ' Cannot be a collection because we need the keys array
+        FormatFields                                As Collection
+        ToString                                    As Stringifier
+        ToSize                                      As Long
+        PadStr                                      As String
+        PadRight                                    As Boolean
+        PadLeft                                     As Boolean
+        ValueTypes                                  As e_VarGenre ' If type the variable Type is inserted before the value
+        HolderTypes                                 As e_VarGenre' If True the Typename of the holder is inserted before the list of 
+        End Type
+    
+    Private s                                       As State
+
+    'Private Type Properties
+    '        ' The next object hold the characters used to delineate different types of objects/Arrays
+    '    ToString                                     As Stringifier
+    'End Type
+
+
+    'Field openers - definitions
+    Private Const NEWLINES                          As String = "{nl"
+    Private Const TABS                              As String = "{tb"
+    Private Const NEWLINES_TAB                      As String = "{nt" ' 1 or more newlines followed by one Tab
+    Private Const DQUOTE                            As String = "{dq"
+    Private Const SQUOTE                            As String = "{sq"
+    Private Const SMART_SQUOTE_OPEN                 As String = "{so"
+    Private Const SMART_SQUOTE_CLOSE                As String = "{sc"
+    Private Const SMART_DQUOTE_OPEN                 As String = "{do"
+    Private Const SMART_DQUOTE_CLOSE                As String = "{dc"
+
+    ' Field closures - definitions
+    Private Const FIELD_COUNT_IS_NONE               As String = "}"
+    Private Const FIELD_COUNT_IS_ZERO               As String = "0}"
+    Private Const FIELD_COUNT_IS_ONE                As String = "1}"
+
+
+    Private Const NO_PADDING                        As Boolean = False
+
+    '@DefaultMember
+    Public Function Deb(Optional ByVal ipValueTypes As e_VarGenre = e_VarGenre.m_none, Optional ByVal ipHolderTypes As e_VarGenre = e_VarGenre.m_none) As Formatter
+    
+    Attribute Deb.VB_UserMemId = 0
+        Allow.InNumRange ipValueTypes, e_VarGenre.m_First, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        Allow.InNumRange ipHolderTypes, e_VarGenre.m_First, e_VarGenre.m_Last, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        
+        With New Formatter
+            Set Deb = .ConstructInstance(ipValueTypes, ipHolderTypes)
+        End With
+    End Function
+
+
+    Friend Function ConstructInstance(ByVal ipValueTypes As e_VarGenre, ByVal ipHolderTypes As e_VarGenre) As Formatter
+ 
+        
+    
+        Set s.ToString = Stringifier(ipValueTypes, ipHolderTypes)
+        s.ToString.ResetMarkup
+        s.PadLeft = NO_PADDING
+        s.PadRight = NO_PADDING
+        Set ConstructInstance = Me
+    
+    End Function
+
+    ' '@Description("Sets the level of type information included in the string")
+    ' Public Function VarInfo(Optional ByVal ipVarInfo As e_VarInfo = e_VarInfo.m_value) As Stringifier
+    
+    '     Allow.InNumRange ipVarInfo, e_VarInfo.m_First, e_VarInfo.m_Last, "Format.VarInfo"
+    
+    '     s.VarInfo = ipVarInfo
+    '     Set VarInfo = Me
+    
+    ' End Function
+
+
+    Private Sub SetFormatFields()
+
+        Set s.FormatFields = New Collection
+         
+        With s.FormatFields
+         
+            .Add Key:=NEWLINES, Item:=vbCrLf                            ' {nl
+            .Add Key:=TABS, Item:=vbTab                                 ' {tb
+            .Add Key:=NEWLINES_TAB, Item:=vbCrLf                        ' {nt
+            .Add Key:=DQUOTE, Item:=Chars.tbPlainDQuote                ' {dq
+            .Add Key:=SQUOTE, Item:=Chars.tbPlainSQuote                ' {sq
+            .Add Key:=SMART_SQUOTE_OPEN, Item:=Chars.tbLSmartSQuote    ' {so
+            .Add Key:=SMART_SQUOTE_CLOSE, Item:=Chars.tbRSmartSQuote   ' {sc
+            .Add Key:=SMART_DQUOTE_OPEN, Item:=Chars.tbLSMartDQuote    ' {do
+            .Add Key:=SMART_DQUOTE_CLOSE, Item:=Chars.tbRSmartDQuote   ' {dc
+             
+        End With
+    
+    End Sub
+
+
+    '@Description("Sends the formatted output to Debug.Print")
+    Public Function Dbg(ByRef ipFormatTemplate As String, ParamArray ipParamarray() As Variant) As String
+    Attribute Dbg.VB_Description = "Sends the formatted output to Debug.Print"
+        
+        Dim myString As String
+        myString = TextByVar(ipFormatTemplate, VBA.CVar(ipParamarray))
+    
+        Debug.Print myString
+        Dbg = myString
+  
+    End Function
+
+
+    '@Description("Returns a string representing the paramArray")
+    Public Function Text(ByRef ipFormatTemplate As String, ParamArray ipParamarray() As Variant) As String
+    Attribute Text.VB_Description = "Returns a string representing the paramArray"
+        Return TextByVar(ipFormatTemplate, VBA.CVar(ipParamarray))
+    End Function
+
+
+    Private Function TextByVar(ByRef ipFormatTemplate As String, ByRef ipFPA As Variant) As String
+    
+        If VBA.LenB(ipFormatTemplate) = 0 Then
+            Return vbNullString
+        End If
+        
+        If Not IsArrayInitialized(ipFPA) Then
+            Return ipFormatTemplate
+        End If
+        
+        If LBound(ipFPA) > UBound(ipFPA) Then
+            Return ipFormatTemplate
+        End If
+        
+    
+        ' ArrayOp.Splat ipFPA
+    
+        ' If ArrayOp.LacksItems(ipFPA) Then
+        '     TextByVar = ipFormatTemplate
+        '     Exit Function
+        ' End If
+    
+        Dim myC As Collection = New Collection
+       
+    
+        Dim myItem As Variant
+        For Each myItem In ipFPA
+            myC.Add s.ToString.StringifyItem(myItem)
+        Next
+    
+        Dim myReturn  As String
+        myReturn = ReplaceFormatFieldWithZeroCountByvbNullString(ipFormatTemplate)
+        myReturn = ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(myReturn)
+        myReturn = ReplaceFormatFieldWithCountByControlCharacters(myReturn)
+        myReturn = ReplaceVariableFieldByVariableString(myReturn, myC)
+    '
+        If s.PadLeft Then
+            TextByVar = Strs.PadLeft(myReturn, s.ToSize, s.PadStr)
+        ElseIf s.PadRight Then
+            TextByVar = Strs.PadRight(myReturn, s.ToSize, s.PadStr)
+        Else
+            TextByVar = myReturn
+        End If
+    
+        s.PadLeft = NO_PADDING
+        s.PadRight = NO_PADDING
+    
+    End Function
+
+
+    ' Friend Function GetFormattedParameters(ByVal ipFormatTemplate As String, ByVal ipFPA As Variant) As String
+
+    '     Dim myReturn  As String
+    '     myReturn = ReplaceFormatFieldWithZeroCountByvbNullString(ipFormatTemplate)
+    '     myReturn = ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(myReturn)
+    '     myReturn = ReplaceFormatFieldWithCountByControlCharacters(myReturn)
+    '     myReturn = ReplaceVariableFieldsToStringRepresentations(myReturn, ipFPA)
+        
+    '     GetFormattedParameters = myReturn
+        
+    ' End Function
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '
+    ' Methods below need to be made public for the test module to run correctly
+    '
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    '@Description("Replace formatting fields of the form '{X0}' with vbNullString")
+    Friend Function ReplaceFormatFieldWithZeroCountByvbNullString(ByVal ipLayoutTemplate As String) As String
+    Attribute ReplaceFormatFieldWithZeroCountByvbNullString.VB_Description = "Replace formatting fields of the form '{WithZeroCount}' with NoString"
+
+        Dim myLayoutTemplate As String
+        Dim myItem As Variant
+
+        myLayoutTemplate = ipLayoutTemplate
+        Dim myKeys As Variant
+        If s.FormatFields Is Nothing Then
+            SetFormatFields
+        End If
+        myKeys = s.FormatFields.Keys
+        For Each myItem In myKeys
+        
+            myLayoutTemplate = VBA.Replace(myLayoutTemplate, myItem & FIELD_COUNT_IS_ZERO, Chars.tbNullStr)
+            
+        Next
+
+        Return myLayoutTemplate
+        
+    End Function
+
+
+    '@Description("Replace non numbered LayoutObj.Format fields {XX} to {XX1}")
+    '@Ignore AssignedByValParameter
+    Friend Function ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne(ByVal ipFormatTemplate As String) As String
+    Attribute ReplaceFormatFieldWithNoCountByFormatFieldWithCountOfOne.VB_Description = "Replace non numbered LayoutObj.Format fields {XX} to {XX1}"
+
+        Dim myItem As Variant
+
+        Dim myKeys As Variant
+        myKeys = s.FormatFields.Keys
+        For Each myItem In myKeys
+        
+            ipFormatTemplate = VBA.Replace(ipFormatTemplate, myItem & FIELD_COUNT_IS_NONE, myItem & FIELD_COUNT_IS_ONE)
+            
+        Next
+        
+        Return ipFormatTemplate
+        
+    End Function
+
+
+    '@Description("return the number in a format field")
+    Friend Function GetRepeatCountForFormatField(ByRef ipFormatTemplate As String, ByVal ipFormatField As String) As Long
+    Attribute GetRepeatCountForFormatField.VB_Description = "return the number in a format field"
+
+        Dim myFormatFieldRepeatLocation         As Long
+        Dim myRepeatCount                       As String
+
+        myFormatFieldRepeatLocation = InStr(ipFormatTemplate, ipFormatField) + Len(ipFormatField)
+        
+        Do While VBA.Mid$(ipFormatTemplate, myFormatFieldRepeatLocation, 1) Like "#"
+            
+            myRepeatCount = myRepeatCount & VBA.Mid$(ipFormatTemplate, myFormatFieldRepeatLocation, 1)
+            myFormatFieldRepeatLocation = myFormatFieldRepeatLocation + 1
+            
+        Loop
+        
+        Return VBA.CLng(myRepeatCount)
+        
+    End Function
+
+
+    '@Description("Replace {XXn} layout field to fomatting characters 'XX' repeated 'n' times")
+    Friend Function ReplaceFormatFieldWithCountByControlCharacters(ByRef ipFormatTemplate As String) As String
+    Attribute ReplaceFormatFieldWithCountByControlCharacters.VB_Description = "Replace {XXn} layout field to fomatting characters 'XX' repeated 'n' times"
+
+        Dim myKey                               As Variant
+        Dim myReplace                           As String
+        Dim myField                             As String
+        Dim myCount                             As Long
+
+        'Dim myItm As Variant
+        Dim myKeys As Variant
+        myKeys = s.FormatFields.Keys
+        For Each myKey In myKeys
+                
+            If InStr(ipFormatTemplate, myKey) > 0 Then
+            
+                myCount = GetRepeatCountForFormatField(ipFormatTemplate, myKey)
+                myField = myKey & CStr(myCount) & "}"
+                myReplace = GetFormattingFieldReplacementString(myKey, myCount)
+                ipFormatTemplate = VBA.Replace(ipFormatTemplate, myField, myReplace)
+                
+            End If
+        
+        Next
+                
+        Return ipFormatTemplate
+        
+    End Function
+
+
+    '@Description("Returns a string of formatting characters in line with the formatting tag")
+    Friend Function GetFormattingFieldReplacementString(ByVal ipFormatString As String, ByVal ipRepeatCount As Long) As String
+    Attribute GetFormattingFieldReplacementString.VB_Description = "Returns a string of formatting characters in line with the formatting tag"
+        
+        Dim myReturn As String
+        ' cannot use vba.string$ here because it only returns multiples of the first character in the substring, ie only the vbcr in vbcrlf
+        myReturn = Strs.Repeat(s.FormatFields.Item(ipFormatString), ipRepeatCount)
+    
+        If ipFormatString = NEWLINES_TAB Then
+        
+            myReturn = myReturn & vbTab
+        
+        End If
+        
+        Return myReturn
+        
+    End Function
+
+
+    '@Description("Replace each ocurrence of '{<number>}' with the corresponding stringified item from the parameters list")
+    Friend Function ReplaceVariableFieldByVariableString _
+    ( _
+    ByVal ipFormatTemplate As String, _
+    ByVal ipC As Collection _
+    ) As String
+    Attribute ReplaceVariableFieldByVariableString.VB_Description = "Replace each ocurrence of '{<number>}' with the corresponding stringified item from the parameters list"
+
+        Dim myReturn                        As String
+
+        myReturn = ipFormatTemplate
+    
+        Dim myIndex As Long
+        For myIndex = 1 To ipC.Count
+    
+            Dim myReplace As String
+            ' Remember that {} fields start at 0
+            myReplace = Chars.tbLCUB & VBA.CStr(myIndex - 1) & Chars.tbRCUB
+            myReturn = VBA.Replace(myReturn, myReplace, ipC.Item(myIndex))
+
+        Next
+        
+        Return myReturn
+        
+    End Function
+
+
+    Public Function ResetMarkup() As Formatter
+        s.ToString.SetArrayMarkup
+        s.ToString.SetObjectMarkup
+        s.ToString.SetDictionaryItemMarkup
+        s.ToString.SetItemMarkup
+        s.ToString.SetTypeMarkup
+        Return Me
+    
+    End Function
+
+
+    Public Function SetDictionaryItemMarkup _
+    ( _
+        Optional ByVal ipLeft As String = Chars.tbSpace & Chars.tbPlainSQuote, _
+        Optional ByVal ipSeparator As String = Chars.tbColon & Chars.tbSpace, _
+        Optional ByVal ipRight As String = Chars.tbPlainSQuote _
+    ) As Formatter
+        s.ToString.SetDictionaryItemMarkup ipLeft, ipSeparator, ipRight
+        Return Me
+    End Function
+
+
+    Public Function SetArrayMarkup _
+    ( _
+        Optional ByVal ipLeft As String = Chars.tbLSQB, _
+        Optional ByVal ipSeparator As String = Chars.tbComma, _
+        Optional ByVal ipRight As String = Chars.tbRSQB _
+    ) As Formatter
+        s.ToString.SetArrayMarkup ipLeft, ipSeparator, ipRight
+        Return Me
+    End Function
+
+    Public Function SetObjectMarkup _
+    ( _
+        Optional ByVal ipLeft As String = Chars.tbLCUB, _
+        Optional ByVal ipSeparator As String = Chars.tbComma, _
+        Optional ByVal ipRight As String = Chars.tbRCUB _
+    ) As Formatter
+        s.ToString.SetObjectMarkup ipLeft, ipSeparator, ipRight
+        Return Me
+    End Function
+
+
+    Public Function SetItemMarkup _
+       ( _
+           Optional ByVal ipLeft As String = Chars.tbLCUB, _
+           Optional ByVal ipSeparator As String = Chars.tbComma, _
+           Optional ByVal ipRight As String = Chars.tbRCUB _
+       ) As Formatter
+        s.ToString.SetItemMarkup ipLeft, ipSeparator, ipRight
+        Return Me
+    End Function
+
+    Public Function TypeMarkup _
+       ( _
+           Optional ByVal ipLeft As String = Chars.tbLCUB, _
+           Optional ByVal ipSeparator As String = Chars.tbComma, _
+           Optional ByVal ipRight As String = Chars.tbRCUB _
+       ) As Formatter
+        s.ToString.SetItemMarkup ipLeft, ipSeparator, ipRight
+        Return Me
+    End Function
+
+
+    Public Function SetArrayMarkupSeparatorOnly() As Formatter
+        s.ToString.SetArrayMarkup ipLeft:=vbNullString, ipRight:=vbNullString
+        Return Me
+    End Function
+
+    Public Function SetObjectMarkupSeparatorOnly() As Formatter
+        s.ToString.SetObjectMarkup ipLeft:=vbNullString, ipRight:=vbNullString
+        Return Me
+    End Function
+
+
+    Public Function SetDictionaryItemMarkupSeparatorOnly() As Formatter
+        s.ToString.SetDictionaryItemMarkup vbNullString, Chars.tbComma, vbNullString
+        Return Me
+    End Function
+
+    Public Function UseItemMarkupOnly() As Formatter
+        s.ToString.UseItemMarkupOnly
+        Return Me
+    End Function
+
+    Public Function NoMarkup() As Formatter
+        s.ToString.NoMarkup
+        Return Me
+    End Function
+
+
+    Public Function PadRight(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As Formatter
+        Set PadRight = Me
+        If s.PadLeft Then
+            Exit Function
+        End If
+        s.ToSize = ipToSize
+        s.PadStr = ipPadStr
+        s.PadRight = True
+        Return Me
+    End Function
+
+    Public Function PadLeft(ByRef ipToSize As Long, Optional ByRef ipPadStr As String = Chars.tbSpace) As Formatter
+        Set PadLeft = Me
+        If s.PadRight Then
+            Exit Function
+        End If
+        s.ToSize = ipToSize
+        s.PadStr = ipPadStr
+        s.PadLeft = True
+        Return Me
+    End Function
+
+    Public Property Get TypeName() As String
+        Return MY_TYPENAME
+    End Property
+
+End Class

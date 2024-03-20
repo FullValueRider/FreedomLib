@@ -1,0 +1,1334 @@
+[ Description ("The typeinfo class provides a set of definitions " _
+ & vbcrlf & "and methods that allow reasoning about Types in a more " _
+ & vbcrlf & " comprehensive manner than afforded the combination of vba.vartype and vba.TypeName.") ]
+ /* to do
+ - Resolve testing for an array so that we can distinguid between an initialised array and a populated array
+ - review testing for UDT
+ - resolve splitting error into two action one for cverrors and the other for errobject.
+ - propogate the above to Var
+ /*
+ # Type Genre
+ A number of Type Genre are defined by e_TypeGenre
+ - m_VBA  - replication of the VB type system
+ - m_FType - Ids and names of individual types (
+ - m_Group - Organisation of Types into functional groups based on thier functionality as viewd from VBA
+ - m_Entity - grouping based on the internal organisation of a type
+ - m_Holder - Grouping of objects which contain multiple values which can be accessed by an index/function-index
+ 
+##FTypes (eNum e_Ids)
+Type Ids and names analagous to those provided by VBA.typename are provided in e_Id.
+The names corresponding to an Ftype Id are hard coded in the dictionary GenreInfo
+
+## Groups (enum e_Group))
+Organision of FTypes ito groups based on the intended function of the Type
+
+## Entity (enum e_Entity)
+based on the organisation of values in the 
+
+## Holder (enum e_Holder)
+variables which hold multiple values intended to be access via an Accessor (index or method/Index or Method/Key)
+
+##Logical comparison of Types
+The position of members in the above enums determins the logical relationsship when tested
+e.g. The e_Group member Number is > e_Group member Boolean but < e_Group member String 
+*/
+
+'****DISCLAIMER***
+' the classification offered by the enums in this class are a best effort on my part
+' to provide useful classifications. Please feel free to modify and update if you have better suggestions
+
+Class TypeInfo
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+
+    Option Explicit
+    
+    ' HOLDER_OBJ contians the names of object designated as holder objects (variables that hold multiple values accessed by a single method which takes an index or key
+    'Private Const HOLDER_OBJ As String = "arraylist, chashd, collection, dictionary, kvpa, kvpair, kvpc, kvpd, kvph, kvphl, queue, seqa, seqal, seqc, seqt, seqq, seqs, stack, treap"
+
+    Public Enum e_TypeGenre
+    	
+        m_NotAssigned = -1
+        m_VBA
+        m_First = e_TypeGenre.m_VBA
+        m_Id        ' uses FLib typenames and ids (parallel definitions to VBA)
+        m_Group     ' orgnisation according to value type
+        m_Holder    ' organisation according to Holder Type
+        m_Entity    ' organisation by structure
+        m_Last = e_typeGenre.m_Entity
+        
+    End Enum
+    
+    Public Enum e_Entity
+        m_NotAssigned = -1
+    	m_Simple = &H300                           ' holds a single value* that can be assigned without set
+        m_First = e_Entity.m_Simple
+        m_UserDefinedType                          ' a grouping of variables which are accessible using unique names qualified by the parent name 
+        m_Array
+        m_Last
+        m_Object = m_Last                   ' an object presenting multiple values accessed by unique names
+        
+    End Enum
+    
+    Public Enum e_ObjectType
+    	m_IsNotObject = -1
+        m_Compound              ' Object has one of more values accessed by a uniquely named property/function
+        m_Holder                ' Object holds multiple variables access by a single keyed method.
+    End Enum
+    
+    ' *  Strings are considered to hold multiple values (characters).  It is the user that interprets a single lexical value from the sequence of characters.
+    ' ** Key in the most general sense of one value being used to return a second value
+    
+    ' need some mechanism to flag e_Holder that this is an enum of bit positions
+    ' to reflect that a holder may meet more than one requirement
+    Public Enum e_Holder
+        m_NotAssigned = -1
+        m_IsNotHolder = &H400                           ' the variable does not hold multiple values
+        m_First = e_Holder.m_IsNotHolder
+        m_String                                        ' Has multiple values that can be retrieved by an key or single method that takes an key
+        m_Array                                         ' variable which contain multiple distinct values  - array, containers,
+        m_ItemByIndex0
+        m_ItemByIndex1
+        m_ItemByKey
+        m_ItemByToArray                                        ' Objects which contain multiple values  ' avoids the use of ItemsObject which is too close to itemObject                               ' Objects which contain multiple values which require values to be extracted as an array( or some other indexable entity) to allow indexing  = e.g.  Stack, Queue
+        m_last = 1 << 6
+        m_Mapper = m_Last                               ' Objects that contain multiple values and which support the MaptIt, FilterIt, CountIt and ReduceIt methods - seq, kvp
+    End Enum
+   
+   ' Groups are used to simplify testing of the Type so we are classifying by behaviour
+    Public Enum e_Group
+    	m_NotAssigned = -1
+        m_NotInit
+        m_Admin = &H500' null, nothing, errobject, error(CVErr) and empty are grouped on the basis that thier most common use is in the control of program flow.
+        m_First = e_group.m_Admin
+        m_Boolean
+        m_Number
+        m_UDT
+        m_MVObject  ' multiple value object
+        m_Last
+        m_Holder = e_group.m_Last
+    End Enum
+    
+    Public Enum e_GenreField
+        
+        m_None
+        m_Id = 0
+        m_vbVarType
+        m_Group
+        m_Entity
+        m_Holder
+    End Enum
+    
+    ' TypeIds used by FreedomLib
+    Public Enum e_Id
+        m_NotAssigned = -1
+        m_Empty = VT_EMPTY          ' 0
+        m_Null = VT_NULL            ' 1
+        m_Integer = VT_I2           ' 2
+        m_Long = VT_I4              ' 3
+        m_Single = VT_R4            ' 4
+        m_Double = VT_R8            ' 5
+        m_Currency = VT_CY          ' 6
+        m_Date = VT_DATE            ' 7
+        m_String = VT_BSTR          ' 8
+        m_Object = VT_DISPATCH      ' 9  ' also used for Nothing because nothing is an object (with name of Nothing)
+        m_CVErr = VT_ERROR          ' 10
+        m_Boolean = VT_BOOL         ' 11
+        m_Variant = VT_VARIANT      ' 12  ' defined but not usable in VBA/TB
+        m_ErrObject = VT_UNKNOWN     ' 13  - vbDataObject
+        m_Decimal = VT_DECIMAL      ' 14
+    
+        m_Byte = VT_UI1             ' 17
+        m_LongLong = VT_I8          ' 20
+        m_UDT = VT_RECORD           ' 36 vbUnserDefinedType
+        ' the following definitions are defined for freedomlib
+        ' the type ID's have no correlations in TB/VBA
+        m_Array = VT_ARRAY          ' 8192  &H2000  Never used on its own in VBA/TB but in compination with another ENUMVAR
+        'VBA defined objects
+        m_Nothing = &H100 ' nothing has a vbVartype of 9 which is Object (VT_DISPATCH)
+        m_Collection
+        m_Debug
+        m_UserForm
+    
+        ' scripting runtime
+    
+        m_Drive
+        m_Drives
+        m_File
+        m_FileSystemObject
+        m_Folder
+        m_TextStream
+    
+        ' FreedomLib
+        ' alternatively from mscorlib
+        m_ArrayList
+        m_Dictionary
+        m_Queue
+        m_Stack
+    
+        m_Stringifier
+        m_StrFormat
+        m_TypeMarkup
+        m_Strs
+        m_Sys
+    
+        m_Args
+        m_NArray            ' N)il array - Lbound gives error
+        m_UArray            ' U)npopulated Lbound > Ubound
+        m_PArray            ' P)opulated array Ubound >= Lbound
+    
+        m_cHashD
+        m_TNode
+        m_Treap
+    
+        m_Maths
+        m_TypeInfo
+        m_Var
+    
+        m_SeqA
+        m_SeqAL
+        m_SeqC
+        m_SeqH
+        m_SeqT
+        m_SeqS
+        m_SeqQ
+    
+        m_KVPair
+        m_KvpA
+        m_KvpC
+        m_KvpH
+        m_KvpT
+    
+        m_Matrix
+        End Enum
+   
+    
+    Public Enum e_ArrayStatus
+        m_VBA
+        m_Declared
+        m_Initialised
+        m_Populated
+    End Enum
+    
+    
+    Private Type State
+        
+        ' Genre information by FType nameing scheme
+        GenreInfo                                       As Treap
+        IdNames                                         As Treap
+    End Type
+    
+    Private s                                           As State
+        
+        
+    Private Sub class_Initialize()
+    	
+        'Debug.Print "TypeInfo errobject is", VBA.VarType(Err), VBA.TypeName(Err)
+        'On Error Resume Next
+        'Dim myError As Long = 0 / 1
+       ' Debug.Print "TypeInfo errobject is", VBA.VarType(Err), VBA.TypeName(Err)
+        'Err.Clear
+       ' Debug.Print "TypeInfo errobject is", VBA.VarType(Err), VBA.TypeName(Err)
+        
+        If s.GenreInfo Is Nothing Then
+            InitialiseGenreInfo
+        End If
+        
+    End Sub
+    
+    
+    Private Sub InitialiseGenreInfo()
+    	
+        Set s.IdNames = Treap()
+        With s.IdNames
+        	.Add e_Id.m_NotAssigned, "notAssigned"
+            .Add e_Id.m_Null, "null"
+            .Add e_Id.m_Empty, "empty"
+            .Add e_Id.m_Nothing, "nothing"
+            .Add e_Id.m_CVErr, "error"
+            ' vbvartype(err) = vbDataObject which corresponds to VT_IUnknown
+            .Add e_Id.m_ErrObject, "errobject"
+            .Add e_Id.m_Boolean, "boolean"
+            .Add e_Id.m_Byte, "byte"
+            .Add e_Id.m_Integer, "integer"
+            .Add e_Id.m_Long, "long"
+            .Add e_Id.m_LongLong, "longlong"
+            .Add e_Id.m_Single, "single"
+            .Add e_Id.m_Double, "double"
+            .Add e_Id.m_Currency, "currency"
+            .Add e_Id.m_Decimal, "decimal"
+            .Add e_Id.m_Date, "date"
+            .Add e_Id.m_String, "string"
+            ' there are three states for entities VBA.ISArray is true
+            .Add e_Id.m_NArray, "narray"
+            .Add e_Id.m_UArray, "uarray"
+            .Add e_Id.m_PArray, "parray"
+            ' the vbA.vartype of a user defined type is 36 (VT_Record)
+            .Add e_Id.m_UDT, "userdefinedtype"
+            '.Add "holderobject", Array(e_Id.m_HolderObject, vbObject, e_Group.m_NotDefined, e_Entity.m_Object, e_Holder.m_Assembly)
+            'This is where we would add user defined types
+            .Add e_Id.m_Args, "args"
+            .Add e_Id.m_Collection, "collection"
+            .Add e_Id.m_cHashD, "chashd"
+            .Add e_Id.m_Dictionary, "dictionary"
+            .Add e_Id.m_Queue, "queue"
+            .Add e_Id.m_Stack, "stack"
+            .Add e_Id.m_ArrayList, "arraylist"
+            .Add e_Id.m_TNode, "tnode"
+            .Add e_Id.m_Treap, "treap"
+            .Add e_Id.m_Maths, "maths"
+            
+            .Add e_Id.m_Stringifier, "stringifier"
+            .Add e_Id.m_StrFormat, "strformat"
+            .Add e_Id.m_TypeMarkup, "typemarkup"
+            .Add e_Id.m_Strs, "strs"
+            .Add e_Id.m_Sys, "sys"
+            .Add e_Id.m_SeqA, "seqa"
+            .Add e_Id.m_SeqAL, "seqal"
+            .Add e_Id.m_SeqC, "seqc"
+            .Add e_Id.m_SeqH, "seqh"
+            .Add e_Id.m_SeqT, "seqt"
+            
+            .Add e_Id.m_KvpA, "kvpa"
+            .Add e_Id.m_KvpC, "kvpc"
+            .Add e_Id.m_KvpH, "kvpH"
+            .Add e_Id.m_KvpT, "kvpT"
+            
+            .Add e_Id.m_Matrix, "matrix"
+            
+            ' .Add e_TypeGenre.m_VBA, "vba"
+                
+            ' .Add e_TypeGenre.m_Id, "Id"       ' uses FLib typenames and ids (parallel definitions to VBA)
+            ' .Add e_TypeGenre.m_Group, "group"     ' orgnisation according to value type
+            ' .Add e_TypeGenre.m_Holder, "holder"   ' organisation according to Holder Type
+            ' .Add e_TypeGenre.m_Entity, "entity"  ' organisation by structure
+            
+
+            ' .Add e_Entity.m_Simple, "simple"                       ' holds a single value* that can be assigned without set
+            ' .Add e_Entity.m_UserDefinedType, "userdefinedtype"                         ' a grouping of variables which are accessible using unique names qualified by the parent name 
+            ' .Add e_Entity.m_Array, "array"
+            ' .Add e_Entity.m_Object, "object"                  ' an object presenting multiple values accessed by unique names
+    
+            ' .Add e_ObjectType.m_Compound, "compound"
+            ' .Add e_ObjectType.m_Holder, "holder"           ' Object holds multiple variables access by a single keyed method.
+
+    
+               ' *  Strings are considered to hold multiple values (characters).  It is the user that interprets a single lexical value from the sequence of characters.
+               ' ** Key in the most general sense of one value being used to return a second value
+    
+               ' need some mechanism to flag e_Holder that this is an enum of bit positions
+               ' to reflect that a holder may meet more than one requirement
+              
+            ' .Add e_Holder.m_String, "string"                                       ' Has multiple values that can be retrieved by an key or single method that takes an key
+            ' .Add e_Holder.m_Array, "array"                                         ' variable which contain multiple distinct values  - array, containers,
+            ' .Add e_Holder.m_ItemByIndex0, "itembyindex0"
+            ' .Add e_Holder.m_ItemByIndex1, "itembyindex1"
+            ' .Add e_Holder.m_ItemByKey, "itembykey"
+            ' .Add e_Holder.m_ItemByToArray, "itembytoarray"                                     ' Objects which contain multiple values  ' avoids the use of ItemsObject which is too close to itemObject                               ' Objects which contain multiple values which require values to be extracted as an array( or some other indexable entity) to allow indexing  = e.g.  Stack, Queue
+            ' .Add e_Holder.m_Mapper, "mapper"                              ' Objects that contain multiple values and which support the MaptIt, FilterIt, CountIt and ReduceIt methods - seq, kvp
+        
+
+            ' '.Add e_Group.m_Invalid, "invalid"
+            ' .Add e_Group.m_Admin, "admin"
+            ' .Add e_Group.m_Boolean, "boolean"
+            ' .Add e_Group.m_Number, "number"
+            ' .Add e_Group.m_UDT, "udt"
+            ' .Add e_Group.m_MVObject, "mvobject"
+           
+            ' .Add e_Group.m_Holder, "holder"
+       
+        End With
+        
+    	Set s.GenreInfo = Treap()
+    	' The names used for keys are provided by the TypeInfo.FName method
+        ' for genreinfo, it is best to do edits using the table in idArray.md and to then copy/[ast below]
+        With s.GenreInfo
+            .Add "null", Array(e_Id.m_Null, vbNull, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "empty", Array(e_Id.m_Empty, vbEmpty, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "nothing", Array(e_Id.m_Nothing, vbObject, e_Group.m_Admin, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "cverr", Array(e_Id.m_CVErr, vbError, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            ' vbvartype(err) = vbDataObject which corresponds to VT_IUnknown
+            .Add "errobject", Array(e_Id.m_ErrObject, vbDataObject, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "boolean", Array(e_Id.m_Boolean, vbBoolean, e_Group.m_Boolean, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "byte", Array(e_Id.m_Byte, vbByte, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "integer", Array(e_Id.m_Integer, vbInteger, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "long", Array(e_Id.m_Long, vbLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "longlong", Array(e_Id.m_LongLong, vbLongLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "single", Array(e_Id.m_Single, vbSingle, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "double", Array(e_Id.m_Double, vbDouble, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "currency", Array(e_Id.m_Currency, vbCurrency, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "decimal", Array(e_Id.m_Decimal, vbDecimal, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "date", Array(e_Id.m_Date, vbDate, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder)
+            .Add "string", Array(e_Id.m_String, vbString, e_Group.m_Holder, e_Entity.m_Simple, e_Holder.m_String)
+            ' there are three states for entities VBA.ISArray is true
+            ' we can use the vbArray id for all three
+            .Add "narray", Array(e_Id.m_NArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder)   ' Array declared but not initialised            -> Dim myArra() as Type - Gives error with ubound
+            .Add "uarray", Array(e_Id.m_UArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder)   ' Array declared and initialised empty          -> Dim myA as variant = Array() - Lbound>Ubound
+            .Add "parray", Array(e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_Array, e_Holder.m_Array)   ' Array declared and initialised with bounds    -> Dim myArray(x to y) UBound >= LBound
+            ' the vbA.vartype of a user defined type is 36 (VT_Record)
+            .Add "udt", Array(e_Id.m_UDT, vbUserDefinedType, e_Group.m_UDT, e_Entity.m_UserDefinedType, e_Holder.m_IsNotHolder)
+
+            'This is where we would add user defined types
+            .Add "args", Array(e_Id.m_Args, vbObject, e_Group.m_MVObject, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "collection", Array(e_Id.m_Collection, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "chashd", Array(e_Id.m_cHashD, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "dictionary", Array(e_Id.m_Dictionary, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "queue", Array(e_Id.m_Queue, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray)
+            .Add "maths", Array(e_Id.m_Maths, vbObject, e_Group.m_MVObject, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "stack", Array(e_Id.m_Stack, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray)
+            .Add "strs", Array(e_Id.m_Strs, vbObject, e_Group.m_MVObject, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "strformat", Array(e_Id.m_StrFormat, vbObject, e_Group.m_MVObject, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "arraylist", Array(e_Id.m_ArrayList, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "tnode", Array(e_Id.m_TNode, vbObject, e_Group.m_MVObject, e_Entity.m_Object, e_Holder.m_IsNotHolder)
+            .Add "treap", Array(e_Id.m_Treap, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex0)
+          
+            .Add "seqa", Array(e_Id.m_SeqA, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "seqal", Array(e_Id.m_SeqAL, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "seqc", Array(e_Id.m_SeqC, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "seqh", Array(e_Id.m_SeqH, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+            .Add "seqt", Array(e_Id.m_SeqT, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1)
+        
+            .Add "kvpair", Array(e_Id.m_KVPair, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "kvpa", Array(e_Id.m_KvpA, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "kvpc", Array(e_Id.m_KvpC, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "kvpH", Array(e_Id.m_KvpH, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            .Add "kvpT", Array(e_Id.m_KvpT, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey)
+            
+            '.add  "seth", Array(e_Id,vbobject, e_Group)  ' probably deprecate this class
+           
+        End With
+        
+        
+    End Sub
+    
+    Public Function IdName(ByRef ipId As Long) As String
+    	If s.IdNames.LacksKey(ipId) Then
+        	Err.Raise 17 + vbObjectError
+    	End If
+        Return s.IdNames.Item(ipId)
+    End Function
+    
+    '@Description("Returns the Group name of the VBA Type.  For grouping purposes some VBA Typenames need to be reassigned")
+    Public Function FName(ByRef ipItem As Variant) As String
+        ' VBA does not permit forwarding of UDT as a variant
+        ' In TB this is permitted but the result is an unsupported variant of Type 36
+        ' Fortunately vba.vartype works and returns 36 (vbUserDefinedType)
+        ' so we can successfully return that we found a udt without having to get embroiled in 'on error' chicanery
+        ' no other functions are possible on a udt forwarded as a variant
+       
+        Dim myName As String = VBA.LCase$(VBA.TypeName(ipItem))
+       
+        If VBA.VarType(ipItem) = vbUserDefinedType Then
+           Return "udt"
+        End If
+        
+        If VBA.IsArray(ipItem) Then
+            ' For arrays we only need to know that it is an array, not the type of the array
+            ' now updated for the initialisation state of the array
+            On Error Resume Next
+            Dim myLbound As Long
+            Dim myUBound As Long
+            myLbound = LBound(ipItem)
+            myUBound = UBound(ipItem)
+            If Err.Number = 9 Then
+                On Error GoTo 0
+                Return "narray"
+            ElseIf myUBound < myLbound Then
+                On Error GoTo 0
+                Return "uarray"
+            Else
+                On Error GoTo 0
+                Return "parray"
+            End If
+            
+        End If
+        
+        If VBA.IsObject(ipItem) Then
+            If ipItem Is Nothing Then
+                Return myName
+            End If
+            If s.GenreInfo.Item(myName)(e_GenreField.m_Holder) = e_Holder.m_IsNotHolder Then
+                Return "mvbject"
+            End If
+        End If
+            
+        Return myName
+        
+    End Function
+    
+    ' Public Function GroupName(ByVal ipItem As Variant) As String
+    	
+    '     Dim myId As e_Group = GroupId(ipItem)
+    '     Select Case myId
+    '     	Case e_Group.m_Admin:               Return "admin"
+    '         Case e_Group.m_Boolean:	            Return "boolean"
+    '         Case e_Group.m_Number:              Return "number"
+    '         Case e_Group.m_String:              Return "string"
+    '         Case e_Group.m_Array:               Return "array"
+    '         Case e_Group.m_UserDefinedType:     Return "userdefinedtype"
+    '         Case e_Group.m_ItemObject:          Return "itemobject"
+    '         Case e_Group.m_ItemByToArray:       Return "itembytoarray"
+    '         Case e_Group.m_ItemByIndex0:        Return "itembyindex0"
+    '         Case e_Group.m_ItemByIndex1:        Return "itembyindex1"
+    '         Case e_Group.m_ItemByKey:           Return "itembykey"
+    '         Case Else
+    '             Err.Raise _
+    '                 CurrentProjectName & Chars.tbPeriod & CurrentComponentName & CurrentProcedureName, _
+    '                 "Unknown type: tb group is not assigned. Got " & VBA.TypeName(ipItem)
+    '     End Select
+     
+    ' End Function
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' ALternatives for VBA.IsXXX methods but adding the complements functions so we have consistency through TyeInfo
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+
+        Public Function IsArray(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsArray(ipItem)
+        End Function
+        
+        Public Function IsNotArray(ByRef ipItem As Variant) As Boolean
+        	Return (Not VBA.IsArray(ipItem))
+        End Function
+        
+        ' tb provides an initialised array
+        ' however this is not a helpful function as it considers array() to be initialised
+        Public Function IsArrayInitialized(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsArrayInitialized(ipItem)
+        End Function
+        
+        Public Function IsArrayNotInitialized(ByRef ipItem As Variant) As Boolean
+        	Return (Not VBA.IsArrayInitialized(ipItem))
+        End Function
+        
+        Public Function IsDate(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsDate(ipItem)
+        End Function
+        
+        Public Function IsNotDate(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsDate(ipItem))
+        End Function
+
+        Public Function IsEmpty(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsEmpty(ipItem)
+        End Function
+        
+        Public Function IsNotEmpty(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsEmpty(ipItem))
+        End Function
+
+        [ Description ("True if ipItem is 'nothing'. Returns false if ipItem is not an object.  Avoids the unusual 'x is nothing' syntax") ]
+        Public Function IsNothing(ByRef ipItem As Variant) As Boolean
+        
+            If IsNotObject(ipItem) Then
+                Return False
+            Else
+                Return (ipItem Is Nothing)
+            End If
+        
+        End Function
+
+        Public Function IsNotNothing(ByRef ipItem As Variant) As Boolean
+            Return (Not IsNothing(ipItem))
+        End Function
+
+        Public Function IsNull(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsNull(ipItem)
+        End Function
+        
+        Public Function IsNotNull(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsNull(ipItem))
+        End Function
+
+        [ Description ("Tests for not being an error created using CVErr") ]
+        Public Function IsError(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsError(ipItem)
+        End Function
+        
+        Public Function IsNotError(ByRef ipItem As Variant) As Boolean
+            IsNotError = Not IsError(ipItem)
+        End Function
+
+        [ Description ("Tests for the Err object See IsError and IsNotError for errors generated using CVErr") ]
+        Public Function IsErrObject(ByRef ipItem As Variant) As Boolean
+        	Return s.GenreInfo.Item(FName(ipItem))(e_GenreField.m_Id) = e_Id.m_ErrObject
+        End Function
+        
+        Public Function IsNotErrObject(ByRef ipitem As Variant) As Boolean
+        	Return Not IsErrObject(ipitem)
+        End Function
+        
+        Public Function IsObject(ByRef ipItem As Variant) As Boolean
+            If ipItem Is Nothing Then
+            	Return False
+            End If
+            
+            If VBA.TypeName(ipItem) = "ErrObject" Then
+            	Return False
+            End If
+            
+        	Return VBA.IsObject(ipItem)
+        End Function
+        
+        Public Function IsNotObject(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsObject(ipItem))
+        End Function
+
+        Public Function IsMissing(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsMissing(ipItem)
+        End Function
+        
+        Public Function IsNotMissing(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsMissing(ipItem))
+        End Function
+
+        Public Function IsNumeric(ByRef ipItem As Variant) As Boolean
+        	Return VBA.IsNumeric(ipItem)
+        End Function
+        
+        Public Function IsNotNumeric(ByRef ipItem As Variant) As Boolean
+            Return (Not VBA.IsNumeric(ipItem))
+        End Function
+    
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' IdMethods
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    Friend Function TryGetIds(ByRef ipItem As Variant, ByRef iopIds As Variant) As Boolean
+    	
+    	Dim myName As String = FName(ipItem)
+       
+        If s.GenreInfo.LacksKey(myName) Then
+            
+        	Return False
+        End If
+        
+        iopIds = s.GenreInfo.Item(myName)
+        Return True
+        
+    End Function
+    
+    'Description ("Return the vbVarType of the variable")
+    Public Function VBAId(ByRef ipItem As Variant) As VbVarType
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+        	Return myIds(e_GenreField.m_vbVarType)
+        End If
+        Return -1
+    End Function
+    
+    Public Function Id(ByRef ipItem As Variant) As e_Id
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return myIds(e_GenreField.m_Id)
+        End If
+        Return e_Id.m_NotAssigned
+    End Function
+    
+    Public Function GroupId(ByRef ipItem As Variant) As e_Group
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return myIds(e_GenreField.m_Group)
+        End If
+        Return e_Group.m_NotAssigned
+    End Function
+    
+    Public Function EntityId(ByRef ipItem As Variant) As e_Entity
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return myIds(e_GenreField.m_Entity)
+        End If
+        Return e_Entity.m_NotAssigned
+    End Function
+    
+    Public Function HolderId(ByRef ipItem As Variant) As e_Holder
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return myIds(e_GenreField.m_Holder)
+        End If
+        Return e_Holder.m_NotAssigned
+    End Function
+    
+
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+' Entity functions
+' m_NotDefined
+' m_Simple = &H300                           ' holds a single value* that can be assigned without set
+' m_First = e_Entity.m_Simple
+' m_UserDefinedType                          ' a grouping of variables which are accessible using unique names qualified by the parent name 
+' m_Array
+' m_Last
+' m_Object = m_Last  
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+
+    Public Function IdIsNotDefined(ByRef ipItem As Variant) As Boolean
+    	Dim myIds As Variant = Empty
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Id) = e_Id.m_NotAssigned)
+        End If
+        Return False
+    End Function
+     Public Function IsSimple(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant = Empty
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Entity) = e_Entity.m_Simple)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotSimple(ByRef ipItem As Variant) As Boolean
+        Return (Not IsSimple(ipItem))
+    End Function
+
+
+    Public Function IsUDT(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant = Empty
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Entity) = e_Entity.m_UserDefinedType)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotUDT(ByRef ipItem As Variant) As Boolean
+        Return (Not IsUDT(ipItem))
+    End Function
+
+
+    Public Function IsCompoundObject(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant = Empty
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Group) = e_Group.m_MVObject)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotCompoundObject(ByRef ipItem As Variant) As Boolean
+        Return (Not IsCompoundObject(ipItem))
+    End Function
+
+
+    Public Function IsHolder(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant = Empty
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Entity) = e_Entity.m_Object)
+        End If
+        Return False
+    End Function
+    
+    Public Function IsNotHolder(ByRef ipItem As Variant) As Boolean
+    	Return (Not IsHolder(ipItem))
+    End Function
+    
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    ' Group functions
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    Public Function IsAdmin(ByRef ipItem As Variant) As Boolean
+    	Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Group) = e_Group.m_Admin)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotAdmin(ByRef ipitem As Variant) As Boolean
+        Return (Not IsAdmin(ipitem))
+    End Function
+
+
+    '@Description("True if ipItem is a Boolean.  Exludes objects with a default member returning a Boolean")
+    Public Function IsBoolean(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Group) = e_Group.m_Boolean)
+        End If
+    End Function
+
+
+    Public Function IsNotBoolean(ByRef ipItem As Variant) As Boolean
+        IsNotBoolean = (Not IsBoolean(ipItem))
+    End Function
+
+
+    '@Dewscription("True if ipItem is a Number.  Excludes objects with a default member returning a Number")
+    Public Function IsNumber(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+           Return (myIds(e_GenreField.m_Group) = e_Group.m_Number)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotNumber(ByRef ipItem As Variant) As Boolean
+        IsNotNumber = (Not IsNumber(ipItem))
+    End Function
+
+
+    '@Description("True if ipItem is a String. Excludes objects with a default member returning a String")
+    Public Function IsString(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Holder) = e_Holder.m_String)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotString(ByRef ipItem As Variant) As Boolean
+        IsNotString = (Not IsString(ipItem))
+    End Function
+
+    Public Function IsNArray(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Id) = e_Id.m_NArray)
+        End If
+        Return False
+    End Function
+    
+    Public Function IsNotNArray(ByRef ipItem As Variant) As Boolean
+        Return (Not IsNArray(ipItem))
+    End Function
+    
+    
+    Public Function IsUArray(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Id) = e_Id.m_UArray)
+        End If
+        Return False
+    End Function
+    
+    Public Function IsNotUArray(ByRef ipItem As Variant) As Boolean
+        Return (Not IsUArray(ipItem))
+    End Function
+    
+    Public Function IsPArray(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Id) = e_Id.m_PArray)
+        End If
+        Return False
+    End Function
+    
+    Public Function IsNotPArray(ByRef ipItem As Variant) As Boolean
+        Return (Not IsPArray(ipItem))
+    End Function
+    [ Description ("Returns true is ipItem is an array.  If ipRanks is specified returns true only if ipRanks matches the number of ranks of the array") ]
+    '@(Description("Returns true if ipItem is a dimensioned Array.  Excludes objects with a default member returning an Array.  See also ArrayOp.Holds/LacksItems"))
+    Public Function IsInitialisedArray(ByRef ipItem As Variant, Optional ipRanks As Long = 0) As Boolean
+    	
+        If Not VBA.IsArray(ipItem) Then
+        	Return False
+        End If
+        
+        If Not IsArrayInitialized(ipItem) Then
+        	Return False
+        End If
+        
+        If LBound(ipItem) > UBound(ipItem) Then
+        	Return False
+        End If
+        
+        If ipRanks = 0 Then
+        	Return True
+        End If
+        
+        If ipRanks = Me.Ranks(ipItem) Then
+        	Return True
+        End If
+        
+        Return False
+        
+    End Function
+
+    Public Function IsNotInitialisedArray(ByRef ipItem As Variant, Optional ipRanks As Long = 0) As Boolean
+        IsNotInitialisedArray = (Not Me.IsInitialisedArray(ipItem, ipRanks))
+    End Function
+
+    Public Function IsRecord(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+           Return (myIds(e_GenreField.m_Group) = e_Group.m_UDT)
+        End If
+        Return False
+    End Function
+    
+    Public Function IsNotRecord(ByRef ipItem As Variant) As Boolean
+    	Return (Not IsRecord(ipItem))
+    End Function
+    
+    
+    '@Description("Returns True if ipItem is an object that is not a Container.  E.g. PointXY is True, Collection is False")
+    Public Function IsItemObject(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Group) = e_Group.m_MVObject)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotItemObject(ByRef ipItem As Variant) As Boolean
+        Return (Not IsItemObject(ipItem))
+    End Function
+
+
+    '@Description("Returns true if ipItem is a container where Items are retrieved by an Item method with the Index starting at 1 e.g. Collection and Seq classes")
+    Public Function IsItemByIndex1(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+           Return (myIds(e_GenreField.m_Holder) = e_Holder.m_ItemByIndex1)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotItemByIndex1(ByRef ipItem As Variant) As Boolean
+        Return Not IsItemByIndex1(ipItem)
+    End Function
+
+
+    '@Description("Returns True if ipItem is a container where Items are retrieved by an Item method with the index starting at 0 e.g. mscorlib ArrayList")
+    Public Function IsItemByIndex0(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Holder) = e_Holder.m_ItemByIndex0)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotItemByIndex0(ByRef ipItem As Variant) As Boolean
+        Return (Not IsItemByIndex0(ipItem))
+    End Function
+
+
+    '@Description("Returns True if ipItem is a container where Items are retrieved by an Item method using a Key.  e.g. cHashD, Scripting.Dictionary, Kvp classes")
+    Public Function IsItemByKey(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+           Return (myIds(e_GenreField.m_Holder) = e_Holder.m_ItemByKey)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotItemByKey(ByRef ipItem As Variant) As Boolean
+        Return (Not IsItemByKey(ipItem))
+    End Function
+
+
+    '@Description("True if ipItem is a container where an index can be used only after the items are extracted using the built in ToArray method.  e.g. mscorlib Stack, Queue")
+    Public Function IsItemByToArray(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+           Return (myIds(e_GenreField.m_Holder) = e_Holder.m_ItemByToArray)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotItemByToArray(ByRef ipItem As Variant) As Boolean
+        Return (Not IsItemByToArray(ipItem))
+    End Function
+
+
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    'Holder functions
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    ' m_Indexable                          ' a string, array or any type of container
+    ' m_Assembly                             ' holds multiple items - array, or container
+    ' m_Container                          ' Objects that hold multiple items i.e. not arrays
+    ' m_ItemByUnBoundKey                        ' Objects the use a .Item method with a numeric index
+    ' m_Mapper     
+
+    ' Public Function IsIndexable(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '        Return (myIds(e_GenreField.m_Holder) And e_Holder.m_Indexable)
+    '     End If
+    '     Return False
+    ' End Function
+    
+    ' Public Function IsNotIndexable(ByRef ipItem As Variant) As Boolean
+    ' 	Return (Not IsIndexable(ipItem))
+    ' End Function
+    
+    
+    ' Public Function IsAssembly(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '        Return (myIds(e_GenreField.m_Holder) And e_Holder.m_Assembly)
+    '     End If
+    '     Return False
+    ' End Function
+    
+    ' Public Function IsNotAssembly(ByRef ipItem As Variant) As Boolean
+    '     Return (Not IsAssembly(ipItem))
+    ' End Function
+    
+    
+    ' Public Function IsContainer(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '        Return (myIds(e_GenreField.m_Holder) And e_Holder.m_Container)
+    '     End If
+    '     Return False
+    ' End Function
+
+    ' Public Function IsNotContainer(ByRef ipItem As Variant) As Boolean
+    '     Return (Not IsContainer(ipItem))
+    ' End Function
+
+
+    ' Public Function IsItemByUnboundKey(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '        Return (myIds(e_GenreField.m_Holder) And e_Holder.m_ItemByPKey)
+    '     End If
+    '     Return False
+    ' End Function
+
+    ' Public Function IsNotItemByUnboundKey(ByRef ipItem As Variant) As Boolean
+    '     Return (Not IsItemByUnboundKey(ipItem))
+    ' End Function
+    
+    ' Public Function IsItemByBoundKey(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '         Return (myIds(e_GenreField.m_Holder) And e_Holder.m_ItemByVKey)
+    '     End If
+    '     Return False
+    ' End Function
+
+    ' Public Function IsNotItemByBoundKey(ByRef ipItem As Variant) As Boolean
+    '     Return (Not IsItemByBoundKey(ipItem))
+    ' End Function
+
+    ' Public Function IsItemByProxy(ByRef ipItem As Variant) As Boolean
+    '     Dim myIds As Variant
+    '     If TryGetIds(ipItem, myIds) Then
+    '         Return (myIds(e_GenreField.m_Holder) And e_Holder.m_ItemByProxy)
+    '     End If
+    '     Return False
+    ' End Function
+
+    ' Public Function IsNotItemByProxy(ByRef ipItem As Variant) As Boolean
+    '     Return (Not IsItemByProxy(ipItem))
+    ' End Function
+
+    Public Function IsMapper(ByRef ipItem As Variant) As Boolean
+        Dim myIds As Variant
+        If TryGetIds(ipItem, myIds) Then
+            Return (myIds(e_GenreField.m_Holder) And e_Holder.m_Mapper)
+        End If
+        Return False
+    End Function
+
+    Public Function IsNotMapper(ByRef ipItem As Variant) As Boolean
+        Return (Not IsMapper(ipItem))
+    End Function
+    
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'Implied property methods
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+
+' For firstindex and last index we return 1 for the first and last index when the item is not a holder so that a loop executes once
+' for arrays that are invalid we return false and false-1 (false evaluates to 0 as a long false -1 = -1) so loops don't execute
+' so loopes will not execute
+'@Description(returns the first index as a long, or false if ipItem is not indexable)
+Public Function FirstIndex(ByRef ipItem As Variant, Optional ipRank As Long = 1) As Variant
+	
+    Allow.GT0 ipRank, "Var.FirstIndex"
+    Dim myIds As Variant
+    If TryGetIds(ipItem, myIds) Then
+    	Err.Raise 17 + vbObjectError
+    End If
+	Select Case myIds(e_GenreField.m_Holder)
+        
+        Case e_Holder.m_Array
+        
+            Select Case myIds(e_GenreField.m_Id)
+                Case e_Id.m_NArray
+                    Return False
+                    
+                Case e_Id.m_UArray
+                    Return False
+                    
+                Case e_Id.m_PArray
+                    Return LBound(ipItem, ipRank)
+                    
+            End Select
+            
+        Case e_Holder.m_ItemByIndex0
+            Return 0
+        Case e_Holder.m_ItemByIndex1
+            Return 1
+        Case e_Holder.m_String
+            Return 1
+        Case e_Holder.m_ItemByKey
+            Return 1
+        Case e_Holder.m_ItemByToArray
+            Return 0
+        Case Else
+            Return 1
+	End Select
+    
+End Function
+
+Public Function LastIndex(ByRef ipItem As Variant, Optional ipRank As Long = 1) As Variant
+	
+    Allow.GT0 ipRank, "Var.LastIndex"
+    
+    Dim myIds As Variant
+    If TryGetIds(ipItem, myIds) Then
+        Err.Raise 17 + vbObjectError
+    End If
+    Select Case myIds(e_GenreField.m_Holder)
+        
+        Case e_Holder.m_Array
+        
+            Select Case myIds(e_GenreField.m_Id)
+                Case e_Id.m_NArray
+                    Return False
+                    
+                Case e_Id.m_UArray
+                    Return False
+                    
+                Case e_Id.m_PArray
+                    Return LBound(ipItem, ipRank)
+                    
+            End Select
+            
+           Case e_Holder.m_ItemByIndex0
+               Return ipItem.count - 1
+               
+           Case e_Holder.m_ItemByIndex1
+               Return ipItem.count
+               
+           Case e_Holder.m_String
+               Return VBA.Len(ipItem)
+               
+           Case e_Holder.m_ItemByKey
+               Return return ipItem.count
+               
+            Case e_Holder.m_ItemByToArray
+           
+            Case Else
+               Return 1
+               
+       End Select
+    
+    
+End Function
+
+Public Function HoldsItems(ByRef ipItem As Variant) As Boolean
+    Dim myIds As Variant
+    If TryGetIds(ipItem, myIds) Then
+        Err.Raise 17 + vbObjectError
+    End If
+    
+    Select Case myIds(e_GenreField.m_Holder)
+    	
+        Case e_Holder.m_IsNotHolder
+            Return False
+            
+        Case e_Holder.m_Array
+        
+            Select Case myIds(e_GenreField.m_Id)
+            	Case e_Id.m_NArray, e_Id.m_UArray
+                    Return False
+                Case e_Id.m_PArray
+                    Return True
+            End Select
+            
+        Case e_Holder.m_String
+            Return VBA.Len(ipItem) > 0
+            
+        Case Else
+        
+            Return ipItem.count > 0
+            
+    End Select
+End Function
+
+Public Function LacksItems(ByRef ipItem As Variant) As Boolean
+    Return Not HoldsItems(ipItem)
+End Function
+
+[ Description ("Returns the number of elements in ipItem." & vbcrlf & _
+" Counts are generated as follows" & vbcrlf & _
+"- Non Indexable Items = 1" & vbcrlf & _
+"- Uninitialised array = -1" & vbcrlf & _
+"- Array with specified rank - Size of rank" & vbcrlf & _
+"- Array with no specified rank = total number of elements in array (product of rank sizes)" & vbcrlf & _
+"- String = Len(ipItem)" & vbcrlf & _ 
+"- Container = the result of the .Count method") ]
+
+Public Function Count(ByRef ipItem As Variant, Optional ipRank As Long = 0) As Long
+	
+    Dim myIds As Variant
+    If TryGetIds(ipItem, myIds) Then
+        Err.Raise 17 + vbObjectError
+    End If
+    
+    Select Case myIds(e_GenreField.m_Holder)
+        
+        Case e_Holder.m_IsNotHolder
+            Return 1
+            
+        Case e_Holder.m_Array
+        
+            Select Case myIds(e_GenreField.m_Id)
+                Case e_Id.m_NArray, e_Id.m_UArray
+                    Return 0
+                    
+                Case Else
+                
+                    Return CountArray(ipItem, ipRank)
+                    
+            End Select
+            
+        Case e_Holder.m_String
+            Return VBA.Len(ipItem)
+            
+        Case Else
+        
+            Return ipItem.count
+            
+    End Select
+    
+End Function
+
+Friend Function CountArray(ByRef ipItem As Variant, ipRank As Long) As Long
+	
+    If ipRank > Unsafe.ArrayDims(ipItem) Then
+    	Return -1
+    End If
+    
+    If ipRank > 0 Then
+    	Return UBound(ipItem, ipRank) - LBound(ipItem, ipRank) + 1
+    End If
+    
+    Dim myCount As Long = 1
+    Dim myRank As Long = 1
+    For myRank = 1 To Unsafe.ArrayDims(ipItem)
+    	myCount *= (UBound(ipItem, myRank) - LBound(ipItem, myRank) + 1)
+    Next
+    Return myCount
+    
+End Function
+
+Public Function HasOneItem(ByRef ipItem As Variant) As Boolean
+	Return TypeInfo.Count(ipItem) = 1
+End Function
+
+
+Public Function Ranks(ByRef ipItem As Variant) As Long
+    Dim myIds As Variant
+    If TryGetIds(ipItem, myIds) Then
+        Err.Raise 17 + vbObjectError
+    End If
+    
+    Select Case myIds(e_GenreField.m_Holder)
+        
+        Case e_Holder.m_IsNotHolder
+            Return 0
+            
+        Case e_Holder.m_Array
+        
+            Select Case myIds(e_GenreField.m_Id)
+                Case e_Id.m_NArray, e_Id.m_UArray
+                    Return -1
+                Case Else
+                
+                    Return Unsafe.ArrayDims(ipItem)
+                    
+            End Select
+            
+        Case Else
+        
+            Return 1
+            
+    End Select
+    
+End Function
+
+Public Function HoldsRank(ByVal ipRank As Long, ByRef ipArray As Variant) As Boolean
+	Return ipRank >= LBound(ipArray) And ipRank <= UBound(ipArray)
+End Function
+
+Public Function LacksRanks(ByVal ipRank As Long, ByRef ipArray As Variant) As Boolean
+	Return Not HoldsRank(ipRank, ipArray)
+End Function
+
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+'Methods that simplify vartype
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+
+    Public Function IsByte(ByRef ipitem As Variant) As Boolean
+        Return (VBA.VarType(ipitem) = vbByte)
+    End Function
+
+    Public Function IsNotByte(ByRef ipItem As Variant) As Boolean
+        Return Not IsBoolean(ipItem)
+    End Function
+
+
+    Public Function IsInteger(ByRef ipItem As Variant) As Boolean
+        Return VBA.VarType(ipItem) = vbInteger
+    End Function
+
+    Public Function IsNotInteger(ByRef ipItem As Variant) As Boolean
+        Return (Not IsInteger(ipItem))
+    End Function
+
+
+    Public Function IsLong(ByRef ipitem As Variant) As Boolean
+        Return VBA.VarType(ipitem) = vbLong
+    End Function
+
+    Public Function IsNotLong(ByRef ipItem As Variant) As Boolean
+        Return (Not IsLong(ipItem))
+    End Function
+
+    Public Function IsLongLong(ByRef ipItem As Variant) As Boolean
+        Return VBA.VarType(ipItem) = vbLongLong
+    End Function
+
+    Public Function IsNotLonglong(ByRef ipItem As Variant) As Boolean
+        Return (Not IsLongLong(ipItem))
+    End Function
+
+    Public Function IsSingle(ByRef ipitem As Variant) As Boolean
+        Return (VBA.VarType(ipitem) = vbSingle)
+    End Function
+
+    Public Function IsNotSingle(ByRef ipItem As Variant) As Boolean
+        Return (Not IsSingle(ipItem))
+    End Function
+
+
+    Public Function IsDouble(ByRef ipItem As Variant) As Boolean
+        Return (VBA.VarType(ipItem) = vbDouble)
+    End Function
+
+    Public Function isNotDouble(ByRef ipItem As Variant) As Boolean
+        Return (Not IsDouble(ipItem))
+    End Function
+
+
+    Public Function IsCurrency(ByRef ipItem As Variant) As Boolean
+        Return VBA.VarType(ipItem) = vbCurrency
+    End Function
+
+    Public Function IsNotCurrency(ByRef ipItem As Variant) As Boolean
+        Return VBA.VarType(ipItem) = vbCurrency
+    End Function
+
+
+    Public Function IsDecimal(ByRef ipItem As Variant) As Boolean
+        Return VBA.VarType(ipItem) = vbDecimal
+    End Function
+
+    Public Function IsNotDecimal(ByRef ipItem As Variant) As Boolean
+        Return (Not IsDecimal(ipItem))
+    End Function
+
+
+End Class

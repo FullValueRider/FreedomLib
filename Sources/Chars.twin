@@ -1,0 +1,56 @@
+[ Description ("Chars provides character definition and related strings and function.  Is is a Module so that we can have public constants") ]
+Module Chars
+
+    Option Explicit
+    
+    Public Const tbNullStr              As String = vbNullString
+    public const tbTilde                as string = "~"
+    Public Const tbBang                 As String = "!"
+    Public Const tbHat                  As String = "^"
+    Public Const tbEqual                As String = "="
+    Public Const tbLArrow               As String = "<"
+    Public Const tbRArrow               As String = ">"
+    Public Const tbVBar                 As String = "|"
+    Public Const tbComma                As String = ","
+    Public Const tbPeriod               As String = "."
+    Public Const tbSpace                As String = " "
+    Public Const tbHyphen               As String = "-"
+    Public Const tbColon                As String = ":"
+    Public Const tbSemiColon            As String = ";"
+    Public Const tbHash                 As String = "#"
+    Public Const tbPlus                 As String = "+"
+    Public Const tbAsterix              As String = "*"
+    Public Const tbLParen               As String = "("
+    Public Const tbRParen               As String = ")"
+    Public Const tbAmp                  As String = "@"
+    Public Const tbLSQB                 As String = "["
+    Public Const tbRSQB                 As String = "]"
+    Public Const tbLCUB                 As String = "{"
+    Public Const tbRCUB                 As String = "}"
+    Public Const tbBSlash               As String = "\"
+    Public Const tbFSlash               As String = "/"
+    Public Const tbLowBar               As String = "_"
+    Public Const tbPlainDQuote          As String = """"
+    Public Const tbPlainSQuote          As String = "'"
+    Public Const tbLSmartSQuote         As String = "‘" 'ChrW$(145)   ' Alt+0145
+    Public Const tbRSmartSQuote         As String = "’" 'ChrW$(146)   ' Alt+0146
+    Public Const tbLSMartDQuote         As String = "“" 'ChrW$(147)   ' Alt+0147
+    Public Const tbRSmartDQuote         As String = "”" 'ChrW$(148)   ' Alt+0148
+    Public Const tbTab                  As String = vbTab
+    Public Const tbCrLf                 As String = vbCrLf
+    Public Const tbLf                   As String = vbLf
+    Public Const tbCr                   As String = vbCr
+    Public Const tbNBsp                 As String = " " 'Chr$(255)
+
+    Public Const tbDefaultSeparator     As String = ","
+
+
+    Public Const Number                 As String = "0123456789"
+    Public Const Lower                  As String = "abcdefghijklmnopqrstuvwxyz"
+    Public Const Upper                  As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    Public Const AlphaNumeric           As String = Number & Upper & Lower
+    Public Const WhiteSpace             As String = tbSpace & tbTab & tbLf & tbCr & tbCrLf & tbNBsp & tbComma & tbSemiColon & tbColon
+    
+    Public Const tbDoubleSpace          As String = "  "
+
+End Module

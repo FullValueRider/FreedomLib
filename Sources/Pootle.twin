@@ -1,0 +1,102 @@
+	Module Pootle
+
+
+Type TestType
+	X As Long
+End Type
+	Sub Testadmin()
+    	Debug.Print TypeInfo.IsNotNull(Empty)
+        
+	End Sub
+	Sub TestNothingNames()
+		Debug.Print TypeName(Nothing), VarType(Nothing)
+	End Sub
+    Sub TestUserFormType()
+        '    Dim myF As VBA.userform
+        '    Debug.Print TypeName(myC), VarType(myC)
+        '    Set myC = New Collection
+        '    Debug.Print TypeName(myC), VarType(myC)
+       End Sub
+	Sub TestCollectionType()
+		Dim myC As Collection
+		Debug.Print TypeName(myC), VarType(myC)
+		Set myC = New Collection
+		Debug.Print TypeName(myC), VarType(myC)
+	End Sub
+	Public Sub errobjectname()
+		Debug.Print TypeName(Err), VarType(Err)
+		
+	End Sub
+	Sub testTypename()
+		Dim myT As TestType
+		Debug.Print TypeName(myT)
+		
+		Dim myt2 As Variant
+		myt2 = CVErr(42)
+		Debug.Print TypeName(myt2), VarType(myt2)
+	End Sub
+	
+	Sub TestNothingTypename()
+		Debug.Print TypeName(Nothing)
+		Dim myC As Collection = Nothing
+		Debug.Print TypeName(myC)
+	End Sub
+	Public Sub TestErrObj()
+		Debug.Print VarType(Err), TypeName(Err)
+	End Sub
+	
+    Sub TestForWithNull()
+    	Debug.Print False - 1
+        Dim myStart As Variant = False
+        Dim myEnd As Variant = False - 1
+        Dim myIndex As Long
+        For myIndex = myStart To myEnd
+        	Debug.Print "How the heck did this happen"
+        Next
+    End Sub
+   
+	Sub TestType()
+		Dim myT As TestType
+		myT.X = 42
+		Dim myC As Collection = New Collection
+		myC.Add myT
+
+		Debug.Print myC.Item(1)
+		myT.X = 42
+		Debug.Print "My user defined type is ", VBA.VarType(myT), VBA.TypeName(myT)
+	End Sub
+	
+	Sub ArrayBounds()
+		Dim myErr As String
+		Dim myLbound As Long
+		On Error Resume Next
+		
+		Dim myA As Variant
+		myLbound = LBound(myA)
+		myErr = Err.Description
+		Debug.Print "myA as variant is ", VBA.IsArray(myA), myLbound, Err.Number, myErr
+		Err.Clear
+		
+		Dim myB() As Long
+		myLbound = LBound(myB)
+		myErr = Err.Description
+		Debug.Print "myB() as long is ", VBA.IsArray(myB), myLbound, Err.Number, myErr
+		Err.Clear
+		
+     	Dim myC() As Variant
+		myLbound = LBound(myC)
+		myErr = Err.Description
+		Debug.Print "myC() as Variant is ", VBA.IsArray(myC), myLbound, Err.Number, myErr
+		Err.Clear
+		
+		Dim myD As Variant = Array()
+     	myLbound = LBound(myD)
+          myErr = Err.Description
+          Debug.Print "myD() as Variant = Array() is ", VBA.IsArray(myD), myLbound, UBound(myD), myErr
+		  
+		Dim myE(0 To 5) As Long
+		myLbound = LBound(myE)
+		myErr = Err.Description
+		Debug.Print "myE(0 to 5) as long is ", VBA.IsArray(myE), myLbound, UBound(myE), myErr
+	End Sub
+End Module

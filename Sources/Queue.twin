@@ -1,0 +1,156 @@
+[ Description ("A Queue class for twinBasic to remove dependency on mscorlib") ]
+Class Queue
+
+    ' This class uses the twinBasic Collection as the host
+    ' This class is provided to allow the use of variables declared as Queue
+    ' However, for this library, Queue is deprecated.  Queue functionality is
+    ' provided by any of the seq classes
+    
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+
+    Option Explicit
+
+    Private Type state
+        Host                                    As Collection
+    End Type
+
+    Private s                                   As state
+
+    [ Description (" The constructor version of Stack will take an array or collection as multiple items, any other non-empty value is treated as a single item)") ]
+    [ DefaultMember ]
+    Public Function Deb(ParamArray ipItems() As Variant) As Queue
+        With New Queue
+            Return .ConstructInstance(VBA.CVar(ipItems))
+        End With
+    End Function
+
+    Friend Function ConstructInstance(ByRef ipItems As Variant) As Queue
+    	
+        Dim myItem As Variant
+        
+        ' empty param array
+        If LBound(ipItems) > UBound(ipItems) Then
+            Set s.Host = New Collection
+        
+        ' single item in paramarray  
+        ElseIf LBound(ipItems) = UBound(ipItems) Then
+            
+            If VBA.IsArray(ipItems(0)) Then
+                
+                Set s.Host = New Collection
+                For Each myItem In ipItems
+                    s.Host.Add myItem
+                Next
+                
+            ElseIf VBA.TypeName(ipItems(0)) = "Collection" Then
+                Set s.Host = ipItems
+                
+            Else
+                Set s.Host = New Collection
+                s.Host.Add ipItems(0)
+                
+            End If
+            
+        Else
+        	
+            Set s.Host = New Collection
+            For Each myItem In ipItems
+            	s.Host.Add myItem
+            Next
+            
+        End If
+        
+        Return Me
+    End Function
+
+    Public Function Count() As Long
+        Return s.Host.Count
+    End Function
+
+    Public Function Enqueue(ByRef ipItem As Variant) As Queue
+    	If VBA.IsNull(ipItem) Then
+        	Err.Raise 17 + vbObjectError, _
+                "FreedomLib.Base.Queue.Enqueue" , _
+                "ipItem is 'Null'.  Null values are not permitted in a Queue"
+    	End If
+        s.Host.Add ipItem
+    End Function
+
+    Public Function Dequeue() As Variant
+    	If s.Host.Count = 0 Then
+        	Return Null
+    	End If
+        Dim myA As Variant = Array(s.Host.Item(s.Host.Count))
+        s.Host.Remove 1
+        Return myA(0)
+    End Function
+
+    Public Function Clear() As Queue
+        s.Host.Clear
+    End Function
+
+    Public Function Clone() As Queue
+        Return Queue(s.Host.Items)
+    End Function
+
+    Public Function Contains(ByRef ipItem As Variant) As Boolean
+        Dim myItem As Variant
+        For Each myItem In s.Host
+            If myItem = ipItem Then
+                Return True
+            End If
+        Next
+        Return False
+    End Function
+
+    Public Function NewEnum() As IUnknown
+        Return s.Host.[_NewEnum]
+    End Function
+
+    Public Function Peek() As Variant
+        Return s.Host.Item(1)
+    End Function
+
+    Public Function ToArray() As Variant
+        Return s.Host.Items
+    End Function
+
+
+    Public Sub CopyTo(ByRef ipArray As Variant, ByRef ipStart As Long)
+    
+        Dim myDIms As Long = Unsafe.ArrayDims(ipArray)
+        If myDIms <> 1 Then
+            Err.Raise 17 + vbObjectError, _
+                "FreedonLib.Base.Stack.CopyTo", _
+                "Expecting array with 1 dimension. Found " & VBA.CStr(myDIms) & "dimensions"
+        End If
+    
+        If LBound(ipArray) > ipStart Then
+            Err.Raise 17 + vbObjectError, _
+                "FreedomLib.Base.Stack.CopyTo", _
+                "Start index'" & VBA.CStr(ipStart) & "' is before Lbound '" & VBA.CStr(LBound(ipArray)) & "'."
+        End If
+    
+        Dim myIndex As Long = ipStart
+        Dim myItem As Variant
+        For Each myItem In s.Host
+        
+            If myIndex > UBound(ipArray) Then
+                Exit For
+            End If
+    
+            If VBA.IsObject(myItem) Then
+                Set ipArray(myIndex) = myItem
+            Else
+                ipArray(myIndex) = myItem
+            End If
+        
+            myIndex += 1
+        
+        Next
+    End Sub
+
+End Class
+

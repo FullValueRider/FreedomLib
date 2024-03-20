@@ -1,0 +1,100 @@
+Class TypeMarkup
+
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    '@IgnoreModule SuspiciousPredeclaredInstanceAccess
+    '@PredeclaredId
+    '@Exposed
+    '@Folder("VBALib.Fmt")
+    '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========C
+    Option Explicit
+
+    Const MY_NAME                   As String = "TypeMarkup"
+    Private Type Properties
+
+        Left                        As String
+        Separator                   As String
+        Right                       As String
+    
+    End Type
+
+    Private p                       As Properties
+
+
+    '@DefaultMember
+    Public Function Deb _
+    ( _
+    Optional ByRef ipLeft As String = Chars.tbLParen, _
+    Optional ByRef ipSeparator As String = Chars.tbComma, _
+    Optional ByRef ipRight As String = Chars.tbRParen _
+    ) As TypeMarkup
+    Attribute Deb.VB_UserMemId = 0
+        With New TypeMarkup
+            Set Deb = .ConstructInstance(ipLeft, ipSeparator, ipRight)
+        End With
+    End Function
+
+
+    Public Function ConstructInstance _
+    ( _
+    ByRef ipLeft As String, _
+    ByRef ipSeparator As String, _
+    ByRef ipRight As String _
+    ) As TypeMarkup
+    
+        p.Separator = ipSeparator
+        p.Left = ipLeft
+        p.Right = ipRight
+    
+        Set ConstructInstance = Me
+    
+    End Function
+
+
+    Public Property Get Separator() As String
+        Separator = p.Separator
+    End Property
+
+    Public Property Let Separator(ByRef ipSeparator As String)
+        p.Separator = ipSeparator
+    End Property
+
+
+    Public Property Get Left() As String
+        Left = p.Left
+    End Property
+    Public Property Let Left(ByRef ipLeft As String)
+        p.Left = ipLeft
+    End Property
+
+
+    Public Property Get Right() As String
+        Right = p.Right
+    End Property
+
+    Public Property Let Right(ByRef ipRight As String)
+        p.Right = ipRight
+    End Property
+
+
+    Public Function Clone() As TypeMarkup
+        Set Clone = TypeMarkup.Deb(p.Left, p.Separator, p.Right)
+    End Function
+
+
+    Public Function ToString() As String
+        ToString = p.Left & "," & p.Separator & "," & p.Right
+    End Function
+
+
+    Public Property Get Name() As String
+        Name = MY_NAME
+    End Property
+
+
+    Public Function ToArray() As Variant
+        ToArray = Array(p.Left, p.Separator, p.Right)
+    End Function
+
+End Class

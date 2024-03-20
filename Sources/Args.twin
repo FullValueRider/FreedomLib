@@ -1,0 +1,100 @@
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+[ Description (" A classs to replace ParamArray so that we can have a specific Type rather than variant") ]
+Class Args
+
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    
+    Private Type Properties
+    	Val                                     As Variant
+        Splat                                   As Boolean
+    End Type
+    
+    Private p                                   As Properties
+    
+    [ DefaultMember ]
+    Public Function Deb(ParamArray ipParamarray() As Variant) As Args
+    	With New Args
+        	Return .ConstructInstance(VBA.CVar(ipParamarray))
+    	End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipFPA As Variant) As Args
+    	
+        p.Splat = False
+        If Not IsArrayInitialized(ipFPA) Then
+        	p.Val = Empty
+        End If
+        
+        If LBound(ipFPA) > UBound(ipFPA) Then
+        	p.Val = Empty
+        End If
+        
+        p.Val = ipFPA
+        
+        Return Me
+        
+    End Function
+
+    Public Function Splat() As Args
+    	Sys.Splat p.Val
+        Return Me
+    End Function
+    
+    Public Function IsArray() As Boolean
+        Return Not IsEmpty(p.Val)
+    End Function
+    
+    Public Function IsNotArray() As Boolean
+    	Return VBA.IsEmpty(p.Val)
+    End Function
+    
+    Public Function HoldsItems() As Boolean
+    	Return (Not VBA.IsEmpty(p.Val))
+    End Function
+    
+    Public Function HoldsOneItem() As Boolean
+    	If VBA.IsEmpty(p.Val) Then
+        	Return False
+        ElseIf LBound(p.Val) = UBound(p.Val) Then
+            Return True
+        Else
+            Return False
+    	End If
+    End Function
+    
+    Public Function LacksItems() As Boolean
+    	Return VBA.IsEmpty(p.Val)
+    End Function
+    
+    Public Function Count() As Long
+    	If VBA.IsEmpty(p.Val) Then
+        	Return -1
+        Else
+            Return UBound(p.Val) - LBound(p.Val) + 1
+    	End If
+        
+    End Function
+    
+    Public Function FirstIndex() As Variant
+    	If VBA.IsEmpty(p.Val) Then
+        	Return Null
+        Else
+            Return UBound(p.Val)
+    	End If
+    End Function
+    
+    Public Function LastIndex() As Long
+    	If VBA.IsEmpty(p.Val) Then
+        	Return Null
+        Else
+            Return UBound(p.Val)
+    	End If
+    End Function
+    
+    Public Property Get Value() As Variant
+    	Return p.Val
+    End Property
+    
+End Class

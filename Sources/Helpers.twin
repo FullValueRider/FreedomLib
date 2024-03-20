@@ -1,0 +1,11 @@
+Module Helpers
+
+	[ Description ("Function to simplify converting an Item to string using class stringifier") ]
+    Public Function ToStr(ByRef ipItem As Variant, Optional ByVal ipVarName As e_VarGenre = e_VarGenre.m_None, Optional ipHolderName As e_VarGenre = e_VarGenre.m_none) As String
+    	Return Stringifier(ipVarName, ipHolderName).StringifyItem(ipItem)
+    End Function
+    
+    Public Function Fmt(Optional ByVal ipVarTypes As e_VarGenre = e_VarGenre.m_None, Optional ByVal ipHolderType As e_VarGenre = e_VarGenre.m_none) As Formatter
+    	Return Formatter.deb()  '(ipVarTypes, ipHolderType)
+    End Function
+End Module

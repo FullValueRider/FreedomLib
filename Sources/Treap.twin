@@ -1,0 +1,389 @@
+[ Description ("Class Treap is provided as a low memory footprint dictionary (no hashing involved) which may be better small sets of data.  It should also be noted that storing items in a Treap automatically sorts them") ]
+Class Treap
+    ' see https://en.wikipedia.org/wiki/Treap
+    ' This implementation is based on the c# full implementation from
+    ' https://www.geeksforgeeks.org/implementation-of-search-insert-and-delete-in-treap/
+    ' be aware that the part examples in this reference do not match the complete example
+    ' and that there is little consistency between the differing language versions.
+    
+    Attribute VB_Creatable = True
+    Attribute VB_PredeclaredId = True
+    Attribute VB_Exposed = True
+    Option Explicit
+    
+    /* 
+    T1, T2 and T3 are subtrees of the tree rooted with y
+    (on left side) or x (on right side)
+                  y                               x
+                 / \     Right Rotation          /  \
+                x   T3   – – – – – – – >        T1   y
+               / \       < - - - - - - -            / \
+              T1  T2     Left Rotation            T2  T3 
+    */
+              
+    Private Type State
+        Root                                        As TNode
+    End Type
+    
+    Private s                                       As State
+    
+    Private Type Properties
+        Count                                       As Long
+    End Type
+    
+    Private p                                       As Properties
+    
+    
+    Const MY_TYPENAME                               As String = "Treap"
+ 
+    [ DefaultMember ]
+    Public Function Deb() As Treap
+        With New Treap
+            Return .ConstructInstance
+        End With
+    End Function
+    
+    Friend Function ConstructInstance() As Treap
+        Set s.Root = Nothing
+        p.Count = 0
+        VBA.Randomize
+        Return Me
+    End Function
+    
+    Public Function Add(ByRef ipKey As Variant, ByRef ipItem As Variant) As Treap
+        Set s.Root = insertNode(s.Root, ipKey, ipItem)
+        p.Count += 1
+        Return Me
+    End Function
+    
+    Public Function Count() As Long
+        Return p.Count
+    End Function
+    
+    
+    Public Property Get Item(ByRef ipKey As Variant) As Variant
+        Dim myNode As TNode = searchNodesForKey(s.Root, ipKey)
+        If myNode Is Nothing Then
+            Return Null
+        Else
+            Return myNode.Item
+        End If
+    End Property
+    
+    Public Property Let Item(ByRef ipKey As Variant, ByVal ipItem As Variant)
+        Dim myNode As TNode = searchNodesForKey(s.Root, ipKey)
+        If myNode Is Nothing Then
+            Err.Raise 17 + vbObjectError, "Treap.Item_Let", "Key not found"
+        Else
+            myNode.Item = ipItem
+        End If
+    End Property
+    
+    Public Property Set Item(ByRef ipKey As Variant, ByRef ipItem As Variant)
+        Dim myNode As TNode = searchNodesForKey(s.Root, ipKey)
+        If myNode Is Nothing Then
+            Err.Raise 17 + vbObjectError, "Treap.Item_Set", "Key not found"
+        Else
+            Set myNode.Item = ipItem
+        End If
+    End Property
+    
+    ' ''' Function to right-rotate a given treap
+ 
+    '         r L
+    '        / \     Right Rotate     / \
+    '       L R ———>         X   r
+    '      / \                          / \
+    '     X Y Y   R
+    ' '''
+ 
+    Private Function rightRotate(ByRef ipNode As TNode) As TNode
+         
+        Dim X As TNode = ipNode.Left
+        Dim T2 As TNode = X.Right
+ 
+        '' rotate
+        Set X.Right = ipNode
+        Set ipNode.Left = T2
+ 
+        '' set a new root
+        Return X
+        
+    End Function
+    
+    '   r                       R
+    '  / \     Left Rotate     / \
+    ' L   R       ———>        r   Y
+    '    / \                     / \
+    '   X   Y                   L   X
+'''
+    
+    Private Function LeftRotate(ByRef ipNode As TNode) As TNode
+ 
+        Dim Y As TNode = ipNode.Right
+        Dim T2 As TNode = Y.Left
+ 
+        ' rotate
+        Set Y.Left = ipNode
+        Set ipNode.Right = T2
+ 
+        ' set a new root
+        Return Y
+        
+    End Function
+ 
+    
+    ' Recursive function to insert a given key with a priority into treap
+    Private Function insertNode(ByRef ipNode As TNode, ByRef ipKey As Variant, ByRef ipItem As Variant) As TNode
+        
+        '' base case
+        If ipNode Is Nothing Then
+            Return TNode.Deb(ipKey, ipItem, Rnd)
+        End If
+        
+        ' if the test below is omitted this allows the treap to have duplicate keys.
+        If ipNode.Key = ipKey Then
+            Err.Raise 17 + vbObjectError, "Treap.Add", "Key already exists"
+        End If
+        ' ' If the given key less than the node key, insert in the left subtree;
+        ' ' otherwise, insert in the right subtree
+        
+        If ipKey <= ipNode.Key Then
+        
+            Set ipNode.Left = insertNode(ipNode.Left, ipKey, ipItem)
+ 
+            '' rotate right If heap property Is violated
+            If ipNode.Left.Priority > ipNode.Priority Then
+                Set ipNode = rightRotate(ipNode)
+            End If
+            
+        Else
+        
+            Set ipNode.Right = insertNode(ipNode.Right, ipKey, ipItem)
+ 
+            '' rotate left If heap property Is violated
+            If ipNode.Right.Priority > ipNode.Priority Then
+                Set ipNode = LeftRotate(ipNode)
+            End If
+            
+        End If
+        
+        Return ipNode
+        
+    End Function
+ 
+    
+    
+    Public Function HoldsKey(ByRef ipKey As Variant) As Boolean
+        Return searchNodesForKey(s.Root, ipKey) IsNot Nothing
+    End Function
+    
+    Public Function LacksKey(ByRef ipKey As Variant) As Boolean
+        Return (searchNodesForKey(s.Root, ipKey) Is Nothing)
+    End Function
+    
+    Public Function HoldsItem(ByRef ipItem As Variant) As Boolean
+        Return searchNodesForItem(s.Root, ipItem)
+    End Function
+    
+    Public Function LacksItem(ByRef ipItem As Variant) As Boolean
+        Return Not searchNodesForItem(s.Root, ipItem)
+    End Function
+    
+    Public Function HoldsItems() As Boolean
+        Return p.Count > 0
+    End Function
+    
+    Public Function LacksItems() As Boolean
+        Return p.Count = 0
+    End Function
+    
+    ' Recursive function to search for a key in a given treap
+    Private Function searchNodesForKey(ByRef ipNode As TNode, ByRef ipKey As Variant) As TNode
+ 
+        ' The left key will always be smaller then the right key
+        ' of if the current key is larger then the node key look right
+        ' else look left until we find the key or the child node is nothing
+        
+        If ipNode Is Nothing Then
+            Return ipNode
+        End If
+        
+        If ipNode.Key = ipKey Then
+            Return ipNode
+        End If
+        
+        If ipKey > ipNode.Key Then
+            Return searchNodesForKey(ipNode.Right, ipKey)
+        End If
+        
+        ' otherwise, search in the right subtree
+        Return searchNodesForKey(ipNode.Left, ipKey)
+ 
+    End Function
+    
+    Private Function searchNodesForItem(ByRef ipNode As TNode, ByRef ipItem As Variant) As Boolean
+        
+        ' There is no specific ordering for items therefore we 
+        ' have to search the tree node by node starting at the left most node
+        
+        If ipNode IsNot Nothing Then
+            
+            If ipItem = ipNode.Item Then
+                Return True
+            End If
+            
+            If searchNodesForItem(ipNode.Left, ipItem) Then
+                Return True
+            End If
+            
+            If searchNodesForItem(ipNode.Right, ipItem) Then
+                Return True
+            End If
+            
+        End If
+
+        Return False
+    
+    End Function
+    
+    Public Function Remove(ByRef ipKey As Variant) As Treap
+        Dim myTmp As TNode = deleteNode(s.Root, ipKey)
+        If myTmp IsNot Nothing Then
+            p.Count -= 1
+        End If
+        Return Me
+    End Function
+    
+    ' Recursive function to delete a key from a given treap
+    Private Function deleteNode(ByRef ipNode As TNode, ByRef ipKey As Variant) As TNode
+ 
+        ' base case  the key Is Not found in the tree
+        If ipNode Is Nothing Then
+            Return ipNode ' which is nothing
+        End If
+ 
+        ' If the key Is less than the root node, recurse for the left subtree
+        If ipKey < ipNode.Key Then
+            Set ipNode.Left = deleteNode(ipNode.Left, ipKey)
+ 
+        ' If the key Is more than the root node, recur for the right subtree
+        ElseIf ipKey > ipNode.Key Then
+            Set ipNode.Right = deleteNode(ipNode.Right, ipKey)
+ 
+        '' If key is at root
+        ElseIf ipNode.Left Is Nothing Then
+                Dim myTmp As TNode = ipNode.Right
+                Set ipNode = myTmp
+                
+        ElseIf ipNode.Right Is Nothing Then
+            
+                Set myTmp = ipNode.Left
+                Set ipNode = Nothing
+        ' at this point we know left and right nodes are not nothing       
+        ElseIf ipNode.Left.Priority < ipNode.Right.Priority Then
+            ' call `LeftRotate()` on the root
+            Set ipNode = LeftRotate(ipNode)
+
+            ' recursively delete the left child
+            Set ipNode.Left = deleteNode(ipNode.Left, ipKey)
+        Else
+            ' call `rotateRight()` on the root
+            Set ipNode = rightRotate(ipNode)
+
+            ' recursively delete the right child
+            Set ipNode.Right = deleteNode(ipNode.Right, ipKey)
+        End If
+
+            
+        Return ipNode
+       
+    End Function
+ 
+    Public Sub PrintIt()
+        InOrder s.Root
+    End Sub
+    
+    
+   Public Function Keys() As Collection
+        
+        Dim myC As Collection = New Collection
+        GetKeys s.Root, myC
+        Return myC
+        
+    End Function
+    
+    Public Function Items() As Collection
+        
+        Dim myC As Collection = New Collection
+        GetItems s.Root, myC
+        Return myC
+        
+    End Function
+    
+    Public Function Pairs() As Collection
+        
+        Dim myC As Collection = New Collection
+        GetPairs s.Root, myC
+        Return myC
+        
+    End Function
+    
+    Private Sub GetKeys(ByRef ipNode As TNode, ByRef myC As Collection)
+        
+        If ipNode IsNot Nothing Then
+            
+            GetKeys ipNode.Left, myC
+            myC.Add ipNode.Key
+            GetKeys ipNode.Right, myC
+            
+        End If
+        
+    End Sub
+    
+    Private Sub GetItems(ByRef ipNode As TNode, ByRef myC As Collection)
+        
+        If ipNode IsNot Nothing Then
+            
+            GetItems ipNode.Left, myC
+            myC.Add ipNode.Item
+            GetItems ipNode.Right, myC
+            
+        End If
+        
+    End Sub
+    
+    Private Sub GetPairs(ByRef ipNode As TNode, ByRef myC As Collection)
+        
+        If ipNode IsNot Nothing Then
+            
+            GetPairs ipNode.Left, myC
+            myC.Add Array(ipNode.Key, ipNode.Item)
+            GetPairs ipNode.Right, myC
+            
+        End If
+        
+    End Sub
+    
+    ' used for debugging 
+    Private Sub InOrder(ByRef ipNode As TNode)
+        
+        If ipNode IsNot Nothing Then
+            
+            InOrder ipNode.Left
+                Debug.Print "Key: " & ipNode.Key, ipNode.Item & " | priority: " & ipNode.Priority ;
+            If ipNode.Left IsNot Nothing Then
+                Debug.Print " | left child: " & ipNode.Left.Key, ipNode.Left.Item ;
+            End If
+            If ipNode.Right IsNot Nothing Then
+                    Debug.Print " | right child: " & ipNode.Right.Key, ipNode.Right.Item ;
+            End If
+            
+           Debug.Print
+           InOrder ipNode.Right
+            
+        End If
+        
+    End Sub
+ 
+End Class

@@ -1,0 +1,357 @@
+Module TestFormatter
+
+    Option Explicit
+    Option Private Module
+
+    Public Sub FormatterTests()
+
+    
+        #If twinbasic Then
+            Debug.Print CurrentProcedureName, vbTab,
+        #Else
+            GlobalAssert
+            VBATesting = True
+            Debug.Print ErrEx.LiveCallstack.ProcedureName, vbTab, vbTab,
+        #End If
+
+        Test01a_Fmt_Text_Nothing
+        Test01b_Fmt_Text_NoParams
+        Test01c_Fmt_Text_NoSubstitutions
+        Test01d_Fmt_Text_Formatting_Threevbcrlf
+        Test01e_Fmt_Text_Formatting_Threeplainquotes
+        Test01f_Fmt_Text_Formatting_Zeroplainquotes
+        Test01g_Fmt_Text_Formatting_ThreeVariables
+    
+        Debug.Print "Testing completed"
+
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01a_Fmt_Text_Nothing()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = vbNullString
+    
+        Dim myResult As String
+    
+        'Act: 
+        myResult = Fmt.Text(vbNullString)
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01b_Fmt_Text_NoParams()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = "Hello {0} World{0}"
+    
+        Dim myResult As String
+    
+        'Act: 
+        myResult = Fmt.Text("Hello {0} World{0}")
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01c_Fmt_Text_NoSubstitutions()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = "Hello World"
+    
+        Dim myResult As String
+    
+        'Act:  
+        myResult = Fmt.Text("Hello World", 1, "One", 3.142)
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01d_Fmt_Text_Formatting_Threevbcrlf()
+
+         On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Hello " & vbCrLf & vbCrLf & vbCrLf & " World"
+    
+        Dim myResult As String
+    
+        'Act: 
+        myResult = Fmt.Text("Hello {nl3} World", 1, "One", 3.142)
+        'Assert:
+   
+        Assert.Exact.AreEqual VBA.Len(myExpected), VBA.Len(myResult), CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01e_Fmt_Text_Formatting_Threeplainquotes()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = "Hello ''' World"
+    
+        Dim myResult As String
+    
+        'Act: 
+        myResult = Fmt.Text("Hello {sq3} World", 1, "One", 3.142)
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01f_Fmt_Text_Formatting_Zeroplainquotes()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = "Hello  World"
+    
+        Dim myResult As String
+        
+        'Act: 
+        myResult = Fmt.Text("Hello {sq0} World", 1, "One", 3.142)
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Fmt")
+    Private Sub Test01g_Fmt_Text_Formatting_ThreeVariables()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String = "Hello 1 One World [1,2,3] {3}"
+    
+        Dim myResult As String
+
+        'Act: 
+        myResult = Fmt.Text("Hello {0} {1} World {2} {3}", 1, "One", Array(1, 2, 3))
+        'Assert:
+   
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02_FormatWithTypesNoneItem_SeqC()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{1,2,3,4,5,6}"
+    
+        Dim myResult As String
+    
+        'Act:
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        myResult = Fmt(e_VarGenre.m_None).ResetMarkup.Text("{0}", myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02a_Format_Collection_VBA()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{Integer: 1,Integer: 2,Integer: 3,Integer: 4,Integer: 5,Integer: 6}"
+    
+        Dim myResult As String
+    
+        'Act:
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        myResult = Fmt(e_VarGenre.m_vbVarType).Text("{0}", myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02b_Format_Collection_TB()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{Integer: 1,Integer: 2,Integer: 3,Integer: 4,Integer: 5,Integer: 6}"
+    
+        Dim myResult As String
+    
+        'Act:
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        myResult = Fmt(e_VarGenre.m_FVarType).Text("{0}", myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02c_Format_Collection_Group()
+
+        On Error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{number: 1,number: 2,number: 3,number: 4,number: 5,number: 6}"
+    
+        Dim myResult As String
+    
+        'Act:
+    
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        myResult = Fmt(e_VarGenre.m_Group).Text("{0}", myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        
+        On Error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+End Module

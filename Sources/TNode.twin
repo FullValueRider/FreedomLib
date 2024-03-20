@@ -1,0 +1,99 @@
+Class TNode
+    
+    Option Explicit
+    '@PredeclaredId
+    '@Exposed
+ 
+    Private Type Properties
+        Priority                                            As Single
+        Left                                                As TNode
+        Right                                               As TNode
+        Key                                                 As Variant
+        Item                                                As Variant
+    End Type
+    
+    Private p                                               As Properties
+
+
+    Public Function Deb(ByVal ipKey As Variant, ByRef ipItem As Variant, ByRef ipPriority As Single) As TNode
+        With New TNode
+            Return .ConstructInstance(ipKey, ipItem, ipPriority)
+        End With
+    End Function
+    
+    Friend Function ConstructInstance(ByRef ipKey As Variant, ByRef ipItem As Variant, ByRef ipPriority As Single) As TNode
+        
+        If VBA.IsObject(ipKey) Then
+            Set p.Key = ipKey
+        Else
+            p.Key = ipKey
+        End If
+        
+        If VBA.IsObject(ipItem) Then
+            Set p.Item = ipItem
+        Else
+            p.Item = ipItem
+        End If
+        
+        p.Priority = ipPriority
+        Set p.Right = Nothing
+        Set p.Left = Nothing
+        
+        Return Me
+        
+    End Function
+
+
+    Public Property Get Key() As Variant
+        Return p.Key
+    End Property
+    
+    Public Property Let Key(ByRef ipKey As Variant)
+        p.Key = ipKey
+    End Property
+    
+    Public Property Set Key(ByRef ipKey As Variant)
+        Set p.Key = ipKey
+    End Property
+    
+    
+    Public Property Get Item() As Variant
+        Return p.Item
+    End Property
+    
+    Public Property Let Item(ByRef ipitem As Variant)
+        p.Item = ipitem
+    End Property
+    
+    Public Property Set Item(ByRef ipItem As Variant)
+        Set p.Item = ipItem
+    End Property
+    
+    
+    Public Property Get Priority() As Single
+        Return p.Priority
+    End Property
+    
+    Public Property Let Priority(ByRef ipPriority As Single)
+        p.Priority = ipPriority
+    End Property
+
+
+    Public Property Get Left() As TNode
+        Return p.Left
+    End Property
+    
+    Public Property Set Left(ByRef ipNode As TNode)
+        Set p.Left = ipNode
+    End Property
+    
+    
+    Public Property Get Right() As TNode
+        Return p.Right
+    End Property
+    
+    Public Property Set Right(ByRef ipNode As TNode)
+        Set p.Right = ipNode
+    End Property
+    
+End Class

@@ -1,0 +1,342 @@
+[ Description ("Module Unsafe is a where the behind the scenes memory jiggery pokery stuff is located if not available in [_HiddenModule] ") ]
+Module Unsafe
+	
+' From  https://en.wikipedia.org/wiki/Variant_type_(COM)
+'       https://learn.microsoft.com/en-us/windows/win32/api/wtypes/ne-wtypes-varenum
+'       earn.microsoft.com/en-us/openspecs/windows_protocols/ms-oaut/3fe7db9f-5803-4dc4-9d14-5425d3f5461f
+'
+ '        Propvariant Type                                           Hex         Dec    Propvariant Member   TypeName    Data bytes          C and C++ type	                Comment
+
+     Public Const VT_EMPTY                              As Integer = &H00       '  0    None                 Empty(1)                                                       Not specified
+     Public Const VT_NULL                               As Integer = &H01       '  1    None                 Null(2)        
+     Public Const VT_I2                                 As Integer = &H02       '  2    iVal                 Integer     2A00                SHORT
+     Public Const VT_I4                                 As Integer = &H03       '  3    lVal                 Long        2A000000            LONG
+     Public Const VT_R4                                 As Integer = &H04       '  4    fltVal               Single      00002842            FLOAT
+     Public Const VT_R8                                 As Integer = &H05       '  5    dblVal               Double      0000000000004540    DOUBLE
+     Public Const VT_CY                                 As Integer = &H06       '  6    cyVal                Currency    A068060000000000    CY structure
+     Public Const VT_DATE                               As Integer = &H07       '  7    date                 Date        00000000C0D5E140    DATE (double)
+     Public Const VT_BSTR                               As Integer = &H08       '  8    bstrVal              String      xxxxxxxx            (BSTR):
+                                                                                                                                            '(OLECHAR *):
+                                                                                                                                            '(WCHAR *):
+                                                                                                                                            '(wchar_t *)
+     Public Const VT_DISPATCH                           As Integer = &H09       '  9    pdispVal            
+     Public Const VT_ERROR                              As Integer = &H0a       ' 10    scode                Error       2A000A80            HRESULT (long int)
+     Public Const VT_BOOL                               As Integer = &H0b       ' 11    boolVal              Boolean     FFFF                VARIANT_BOOL (short)
+     Public Const VT_VARIANT                            As Integer = &H0c       ' 12    pvarVal              Variant                         VARIANT
+     Public Const VT_UNKNOWN                            As Integer = &H0d       ' 13    punkVal              Nothing(4)  00000000            IUnknown *
+     Public Const VT_DECIMAL                            As Integer = &H0e       ' 14    decVal                                               DECIMAL
+     ' &H0F does not appear in the VT_Enum definition
+     Public Const VT_I1                                 As Integer = &H10       ' 16    cVal                 Byte                            CHAR
+     Public Const VT_UI1                                As Integer = &H11       ' 17    bVal                 Byte        2A                  BYTE (unsigned char)
+     Public Const VT_UI2                                As Integer = &H12       ' 18    uiVal                                                WORD (unsigned short)
+     Public Const VT_UI4                                As Integer = &H13       ' 19    ulVal                                                DWORD (unsigned int)
+     Public Const VT_I8                                 As Integer = &H14       ' 20    hVal            
+     Public Const VT_UI8                                As Integer = &H15       ' 21    uhVal            
+     Public Const VT_INT                                As Integer = &H16       ' 22    intVal            
+     Public Const VT_UINT                               As Integer = &H17       ' 23    uintVal            
+     Public Const VT_VOID                               As Integer = &H18       ' 24 
+     Public Const VT_HRESULT                            As Integer = &H19       ' 25                        Missing(3)   80020004           HRESULT (long int)
+     Public Const VT_PTR                                As Integer = &H1a       ' 26
+     Public Const VT_SAFEARRAY                          As Integer = &H1b       ' 27    parray            
+     Public Const VT_CARRAY                             As Integer = &H1c       ' 28          
+     Public Const VT_USERDEFINED                        As Integer = &H1d       ' 29        
+     Public Const VT_LPSTR                              As Integer = &H1e       ' 30    pszVal            
+     Public Const VT_LPWSTR                             As Integer = &H1f       ' 31    pwszVal            
+     Public Const VT_RECORD                             As Integer = &H24       ' 36
+     Public Const VT_INT_PTR                            As Integer = &H25       ' 37    pintVal            
+     Public Const VT_UINT_PTR                           As Integer = &H26       ' 38    puintVal  
+     Public Const VT_FILETIME                           As Integer = &h40       ' 64
+     Public Const VT_BLOB                               As Integer = &H41       ' 65                                                                                        Length prefixed Bytes
+     Public Const VT_STREAM                             As Integer = &H42       ' 66                                                                                        The name of the stream follows
+     Public Const VT_STORAGE                            As Integer = &H43       ' 67                                                                                        The name of the storage follows
+     Public Const VT_STREAMED_OBJECT                    As Integer = &H44       ' 68                                                                                        The stream contains an object
+     Public Const VT_STORED_OBJECT                      As Integer = &H45       ' 69                                                                                        The storage contains an object
+     Public Const VT_BLOB_OBJECT                        As Integer = &H46       ' 70                                                                                        The blob contains an object
+     Public Const VT_CF                                 As Integer = &H47       ' 71                                                                                        A clipboard format
+     Public Const VT_CLSID                              As Integer = &H48       ' 72                                                                                        A class Id
+     Public Const VT_VERSIONED_STREAM                   As Integer = &H73       ' 73                                                                                        A stream with a GUID version
+     Public Const VT_BSTR_BLOB                          As Integer = &Hfff      ' 4095                                                                                      Reserved
+     Public Const VT_VECTOR                             As Integer = &H1000     ' 4096                                                                                      A simple counted array
+     Public Const VT_ARRAY                              As Integer = &H2000     ' 8192                                                                                      A safe Array pointer
+     Public Const VT_BYREF                              As Integer = &H4000     ' 16384                                                                                     A void pointer for local use
+     Public Const VT_RESERVED                           As Integer = &H8000     ' 32768
+     Public Const VT_ILLEGAL                            As Integer = &Hffff     ' 65535
+     Public Const VT_ILLEGALMASKED                      As Integer = &Hfff      ' 4095
+     Public Const VT_TYPEMASK                           As Integer = &Hfff      ' 4095
+    
+    
+    '9                                                                                      Object reference(5) xxxxxxxx        IUnknown*
+    
+   
+' 1 The Type of an uninitialized variant.
+' 2 The Type of a NULL value in a database, that is, not uninitialized, nor equivalent to a C++ null pointer.
+' 3 Missing arguments are actually a particular Error value titled "parameter not found".
+' 4 The object type set to a null reference.
+' 5 TypeName will return the name of the class of the object contained. The data would be an interface pointer, that is, a pointer to a pointer to a virtual method table (which Is an array of function pointers).
+
+'Array ffeatures flags
+' from https://learn.microsoft.com/en-us/windows/win32/api/oaidl/ns-oaidl-safearray
+' see also
+'https://learn.microsoft.com/en-us/archive/msdn-magazine/2017/march/introducing-the-safearray-data-structure
+'https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-oaut/2e87a537-9305-41c6-a88b-b79809b3703a
+Public Const FADF_AUTO                              As Integer = &H0001         'An array that Is allocated on the stack.
+Public Const FADF_STATIC                            As Integer = &H0002         'An array that Is statically allocated.
+Public Const FADF_EMBEDDED                          As Integer = &H0004         'An array that Is embedded in a structure.
+Public Const FADF_FIXEDSIZE                         As Integer = &H0010         'An array that may Not be resized Or reallocated.
+Public Const FADF_RECORD                            As Integer = &H0020         'An array that contains records. When set, there will be a pointer to the IRecordInfo interface at negative offset 4 in the array descriptor.
+Public Const FADF_HAVEIID                           As Integer = &H0040         'An array that has an IID identifying interface. When set, there will be a GUID at negative offset 16 in the safe array descriptor. Flag is set only when FADF_DISPATCH or FADF_UNKNOWN is also set.
+Public Const FADF_HAVEVARTYPE                       As Integer = &H0080         'An array that has a variant Type. The variant type can be retrieved with SafeArrayGetVartype.
+Public Const FADF_BSTR                              As Integer = &H0100         'An array of BSTRs.
+Public Const FADF_UNKNOWN                           As Integer = &H0200         'An array of IUnknown*.
+Public Const FADF_DISPATCH                          As Integer = &H0400         'An array of IDispatch*.
+Public Const FADF_VARIANT                           As Integer = &H0800         'An array of VARIANTs.
+Public Const FADF_RESERVED                          As Integer = &HF008
+
+
+'========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
+    ' Variant copy can be used to avoid having to test and use Set or (implicitly) let.
+    ' VariantCopyInd will dereference the soure Variant so that the dest variant is no longer ByRef
+    'https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-variantcopy
+    Public Declare PtrSafe Function VariantCopy Lib "oleaut32" (Dst As Any, Src As Any) As Long
+    'https://learn.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-variantcopyind
+    Public Declare PtrSafe Function VariantCopyInd Lib "oleaut32" (Dst As Any, Src As Any) As Long
+    
+    Public Declare PtrSafe Function SafeArrayLock Lib "oleaut32" (src As LongPtr) As LongPtr
+    Public Declare PtrSafe Function SafeArrayUnlock Lib "oleaut32" (src As LongPtr) As LongPtr
+    Public Declare PtrSafe Function SafeArrayCreate Lib "oleaut32" (ByVal ipVarType As Integer, ByVal ipDims As Long, ByVal ipBoundsAddr As LongPtr) As LongPtr
+    Public Declare PtrSafe Sub SafeArrayDestroy Lib "oleaut32" (ByVal ipSafeArrayPtr As LongPtr)
+        
+    ' from modHashD
+    '    Public Type SAFEARRAY1D
+    '      cDims                 As Integer
+    '      fFeatures             As Integer
+    '      cbElements            As Long
+    '      cLocks                As Long
+    '      pad                   As Long
+    '      pvData                As LongPtr
+    '      cElements1D           As Long
+    '      lLbound1D             As Long
+    '    End Type
+
+    '    Public Declare PtrSafe Sub BindArray Lib "kernel32" Alias "RtlMoveMemory" (PArr() As Any, pSrc As LongPtr, Optional ByVal CB As Long = 4)
+    '    Public Declare PtrSafe Function VariantCopy Lib "oleaut32" (Dst As Any, Src As Any) As Long
+    '    Public Declare PtrSafe Function VariantCopyInd Lib "oleaut32" (Dst As Any, Src As Any) As Long
+        Public Declare PtrSafe Function CharLowerBuffW& Lib "user32" (lpsz As Any, ByVal cchLength&)
+    
+    Public Enum e_SAOffsetsOneRank
+        m_cDims = 0
+        m_fFeature = 2
+        m_cbElements = 4
+        m_cLocks = 8
+        m_pvdata = 12
+# If win64 Then
+        m_cElements1 = 20
+        m_lLBounds1  = 24
+#Else
+        m_cElements1 = 16
+        m_lLBounds1 = 20
+#End If
+    End Enum
+
+    Public Enum e_VarOffsets ' in bytes
+        m_Vt = 0
+        m_Reserved1 = 2
+        m_Reserved2 = 4
+        m_Reserved3 = 6
+        m_DataField1 = 8  ' datafield1 is a longptr
+    #If Win64 Then
+    	m_DataField2 = 16 ' datafield2 is a long ptr
+    #Else
+        m_DataField2 = 12
+    #End If
+    End Enum
+    
+    Public Type SABaseUDT
+        cDims                                   As Integer
+        fFeatures                               As Integer
+        cbElements                              As Long
+        cLocks                                  As Long
+        pvData                                  As LongPtr
+    End Type
+    
+    Public Type SAWithOneRankUDT
+        cDims                                   As Integer
+        fFeatures                               As Integer
+        cbElements                              As Long
+        cLocks                                  As Long
+        pvData                                  As LongPtr
+        cElements1D                             As Long
+        lLbound1D                               As Long
+    End Type
+    
+    Public Type SA12UDT
+        cDims                                   As Integer
+        fFeatures                               As Integer
+        cbElements                              As Long
+        cLocks                                  As Long
+        pvData                                  As LongPtr
+        RankCount1                              As Long
+        Rank1                                   As Long
+        RankCount2                              As Long
+        Rank2                                   As Long
+        RankCount3                              As Long
+        Rank3                                   As Long
+        ' RankCount4                              As Long
+        ' Rank4                                   As Long
+        ' RankCount5                              As Long
+        ' Rank5                                   As Long
+        ' RankCount6                              As Long
+        ' Rank6                                   As Long
+        ' RankCount7                              As Long
+        ' Rank7                                   As Long
+        ' RankCount8                              As Long
+        ' Rank8                                   As Long
+        ' RankCount9                              As Long
+        ' Rank9                                   As Long
+        ' RankCount10                             As Long
+        ' Rank10                                  As Long
+        ' RankCount11                             As Long
+        ' Rank11                                  As Long
+        ' cElement12                              As Long
+    End Type
+
+    Public Type SABound                         ' offsets
+        cElements                               As Long                 ' 0
+        lLbound                                 As Long                 ' 4
+    End Type
+    
+    ' ' The variant struct
+    ' ' https://stackoverflow.com/questions/6901991/how-to-return-the-number-of-dimensions-of-a-variant-variable-passed-to-it-in-v
+    Public Type VariantUdt
+        Vt                                      As Integer      ' describes the type of value stored in the variant
+        Reserved1                               As Integer      ' reserved
+        Reserved2                               As Integer      ' reserved
+        Reserved3                               As Integer      ' reserved
+        Data1                                   As LongPtr
+        Data2                                   As LongPtr      ' Value or pointer to the actual value
+    End Type
+
+    
+    Public Const myPtrSize                      As Long = lenB(Of LongPtr)
+    Public Const myVarSize                      As Long = lenb(Of Variant)
+    Public Const mySaSize                       As Long = -1                ' lenb doesn't seem to support udt here
+    
+    'Private Host                                As Variant
+    [ Description ("Returns the address of the safearray struct from a variant.  Dereferences if array is VT_BYREF.  Safe for 32 AND 64 bit modes ") ]
+    Public Function ArrayPtr(ByRef ipArray As Variant) As LongPtr
+     
+        ' copy the VT of the array (i.e. the VT field of the Variant.)
+        Dim myVT As Integer = 0
+        [_HiddenModule].vbaCopyBytes VBA.len(Of Integer), ByVal VarPtr(myVT), ByVal VarPtr(ipArray) + e_VarOffsets.m_Vt
+    
+        ' Get the initial address from DataField1 of the s.Host variant
+        Dim myArrayPtr As LongPtr = 0
+        'copy the address field
+        [_HiddenModule].vbaCopyBytes myPtrSize, ByVal VarPtr(myArrayPtr), ByVal VarPtr(ipArray) + e_VarOffsets.m_DataField1
+    
+        ' check if we need to dereference myArrayPtr
+        If myVT And Unsafe.VT_BYREF Then
+            ' Datafield1 is a pointer to the pointer to the safe array
+        [_HiddenModule].vbaCopyBytes myPtrSize, ByVal VarPtr(myArrayPtr), ByVal myArrayPtr
+    
+        End If
+    
+        Return myArrayPtr
+        
+    End Function
+    
+    [ Description ("returns pvData of the provided array") ]
+    Public Function ArrayDataPtr(ByRef ipArray As Variant) As LongPtr
+    	Dim myPtr As LongPtr
+        vbaCopyBytes LenB(Of LongPtr), ByVal VarPtr(myPtr), ByVal ArrayPtr(ipArray) + e_SAOffsetsOneRank.m_pvdata
+    	Return myPtr
+    End Function
+    
+    
+    Public Sub LockArray(ByRef ipArray As Variant)
+       SafeArrayLock ByVal ArrayPtr(ipArray)
+    End Sub
+    
+    Public Sub UnlockArray(ByRef ipArray As Variant)
+        SafeArrayUnlock ByVal ArrayPtr(ipArray)
+    End Sub
+   
+    Public Function ArrayDims(ByRef ipArray As Variant) As Long
+    	Allow.InitialisedArray ipArray, CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
+        
+        Dim myPtr As LongPtr = 0
+        myPtr = ArrayPtr(ipArray)
+        Dim myDims As Integer
+        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myDims), ByVal myPtr
+        Return myDims
+    End Function
+    
+    Public Function VarVt(ByRef ipVariant As Variant) As Integer
+    	Dim myVarVt As LongPtr = 0
+        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myVarVt), ByVal VarPtr(ipVariant)
+        Return myVarVt
+    End Function
+    
+    Public Function ArrayFeaturesFlags(ByRef ipArray As Variant) As Integer
+    	Dim mySAptr As LongPtr = 0
+        mySAptr = ArrayPtr(ipArray)
+        Dim myFeatures As Integer = 0
+        vbaCopyBytes LenB(Of Integer), ByVal VarPtr(myFeatures), ByVal mySAptr + e_SAOffsetsOneRank.m_fFeature
+        Return myFeatures
+    End Function
+    
+    
+    Public Sub Test()
+    	Dim myA As Variant
+        Dim myVal As Long = 100
+        ReDim myA(1 To 10, 5 To 9)
+        Dim myX As Long
+        For myX = 1 To 10
+        	Dim myY As Long
+            For myY = 5 To 9
+            	myA(myX, myY) = myVal
+                myVal += 100
+            Next
+        Next
+        
+        ' Dim myItem As Variant
+        ' For Each myItem In myA
+        ' 	Debug.Print myItem
+        ' Next
+        Dim myHost As Variant = 0
+        Bind myHost, myA
+        myA(2, 7) = 42
+        myHost(10) = 42
+    End Sub
+    
+    Public Sub Bind(ByRef ipHost As Variant, ByRef ipArray As Variant)
+    	
+        Dim myHostBackup As VariantUdt
+        Dim ipHostvariant As VariantUdt
+        
+       
+        
+        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(myHostBackup), ByVal VarPtr(ipHost)
+        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHost), ByVal VarPtr(ipArray)
+        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
+       'Dim mySAstruct As LongPtr = ArrayDataPtr(ipArray)
+        Dim myClone As SA12UDT
+        ' we know that we have two dims in ipArray
+        Dim mysize As Long = LenB(Of SABaseUDT) + LenB(Of Long) * 4
+        vbaCopyBytes mysize, ByVal VarPtr(myClone), ByVal ArrayPtr(ipHost)
+        
+        ' update the clone to be a 1 dimension array
+        myClone.cDims = 1%
+        myClone.RankCount1 = 50&
+        myClone.Rank1 = 1
+        
+        ' now we transplant datafield1 of host
+        Dim mycloneptr As LongPtr = VarPtr(myClone)
+        Dim myHostptr As LongPtr = VarPtr(ipHost)
+        Dim myHostDatafield1ptr As LongPtr = myHostptr + e_VarOffsets.m_DataField1
+        
+        vbaCopyBytes LenB(Of LongPtr), ByVal myHostDatafield1ptr, ByVal VarPtr(mycloneptr)
+        vbaCopyBytes LenB(Of Variant), ByVal VarPtr(ipHostvariant), ByVal VarPtr(ipHost)
+    End Sub
+    
+End Module

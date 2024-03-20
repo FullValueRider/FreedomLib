@@ -1,0 +1,1606 @@
+Module TestStringifier
+
+    Option Explicit
+    Option Private Module
+
+    Public Sub StringifierTests()
+ 
+        
+        Debug.Print CurrentProcedureName, vbTab,
+        
+        Test01_StringifyItem_String_NoTypeName
+        Test01a_StringifyItem_String_VBATypeName
+    
+        Test02_StringifyItem_Long_NoTypeName
+        Test02a_StringifyItem_Long_VBATypeName
+        Test02b_StringifyItem_Long_TBName
+        Test02c_StringifyItem_Long_GroupName
+    
+        Test03_StringifyItem_Array_NoTypeName
+        Test03a_StringifyItem_Array_VBA
+        Test03b_StringifyItem_Array_TB
+        
+        Test03d_StringifyItem_Array_TB_HolderVBA
+        Test03e_StringifyItem_Array_TB_HolderTB
+        Test03f_StringifyItem_Array_Group_HolderGroup
+        
+        Test04a_StringifyItem_Collection_NoTypes
+        Test04b_StringifyItem_Collection_VBA
+        Test04c_StringifyItem_Collection_TB
+        Test04d_StringifyItem_Collection_Group
+        Test04e_StringifyItem_Collection_Group_VBA
+        Test04f_StringifyItem_Collection_Group_TB
+        Test04g_StringifyItem_Collection_Group_Group
+        
+        Test05a_StringifyItem_ArrayList_NoTypes
+        Test05b_StringifyItem_ArrayList_VBA
+        Test05c_StringifyItem_ArrayList_TB
+        Test05d_StringifyItem_ArrayList_Group
+        Test05e_StringifyItem_ArrayList_Group_VBA
+        Test05f_StringifyItem_ArrayList_Group_TB
+        Test05g_StringifyItem_ArrayList_Group_Group
+        Test05h_StringifyItem_UninitArrayList_Group_Group
+        
+        
+        Test06a_StringifyItem_Queue_NoTypes
+        Test06b_StringifyItem_Queue_VBA
+        Test06c_StringifyItem_Queue_TB
+        Test06d_StringifyItem_Queue_Group
+        Test06e_StringifyItem_Queue_Group_VBA
+        Test06f_StringifyItem_Queue_Group_TB
+        Test06g_StringifyItem_Queue_Group_Group
+        
+        Test07a_StringifyItem_ItemObject_NoTypes
+        Test07b_StringifyItem_ItemObject_VBA
+        Test07c_StringifyItem_ItemObject_TB
+        Test07d_StringifyItem_ItemObject_Group
+        Test07e_StringifyItem_ItemObject_Group_VBA
+        Test07f_StringifyItem_ItemObject_Group_TB
+        Test07g_StringifyItem_ItemObject_Group_Group
+        
+        Test08a_StringifyItem_admin_NoTypes
+        Test08b_StringifyItem_admin_VBA
+        Test08c_StringifyItem_admin_TB
+        Test08d_StringifyItem_admin_Group
+        ' Test08b_StringifyItem_admin_VBA
+        ' Test08c_StringifyItem_admin_TB
+        ' Test08d_StringifyItem_admin_Group
+        ' Test08e_StringifyItem_admin_Group_VBA
+        ' Test08f_StringifyItem_admint_Group_TB
+        ' Test08g_StringifyItem_admin_Group_Group
+        Debug.Print "Testing completed"
+
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test01_StringifyItem_String_NoTypeName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Hello World!"
+    
+        Dim myResult As String
+    
+        'Act:
+        myResult = Stringifier().StringifyItem("Hello World!")
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test01a_StringifyItem_String_VBATypeName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "String: Hello World!"
+    
+        Dim myResult As String
+    
+        'Act: 
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem("Hello World!")
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02_StringifyItem_Long_NoTypeName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "42"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier.Deb.ResetMarkup.StringifyItem(42)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02a_StringifyItem_Long_VBATypeName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Long: 42"  ' Yes, its an integer, not Long
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(42&)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02b_StringifyItem_Long_TBName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "long: 42"  ' Yes, its an integer, not Long
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(42&)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test02c_StringifyItem_Long_GroupName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "number: 42"  ' Yes, its an integer, not Long
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_Group).StringifyItem(42&)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test03_StringifyItem_Array_NoTypeName()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "[1,2,3,4,5,6]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier().StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test03a_StringifyItem_Array_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "[Integer: 1,Integer: 2,Integer: 3,Integer: 4,Integer: 5,Integer: 6]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test03b_StringifyItem_Array_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "[integer: 1,integer: 2,integer: 3,integer: 4,integer: 5,integer: 6]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test03c_StringifyItem_Array_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "[number: 1,number: 2,number: 3,number: 4,number: 5,number: 6]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(Array(1, 2, 3, 4, 5, 6))
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test03d_StringifyItem_Array_TB_HolderVBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Integer(): [integer: 10,integer: 20,integer: 30,integer: 40,integer: 50,integer: 60]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        Dim myI(1 To 6) As Integer
+        myI(1) = 10
+        myI(2) = 20
+        myI(3) = 30
+        myI(4) = 40
+        myI(5) = 50
+        myI(6) = 60
+        myResult = Stringifier(e_VarGenre.m_FVarType, e_VarGenre.m_vbVarType).StringifyItem(myI)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test03e_StringifyItem_Array_TB_HolderTB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "parray: [integer: 10,integer: 20,integer: 30,integer: 40,integer: 50,integer: 60]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        Dim myI(1 To 6) As Integer
+        myI(1) = 10
+        myI(2) = 20
+        myI(3) = 30
+        myI(4) = 40
+        myI(5) = 50
+        myI(6) = 60
+        myResult = Stringifier(e_VarGenre.m_FVarType, e_VarGenre.m_FVarType).StringifyItem(myI)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test03f_StringifyItem_Array_Group_HolderGroup()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "array: [number: 10,number: 20,number: 30,number: 40,number: 50,number: 60]"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        Dim myI(1 To 6) As Integer
+        myI(1) = 10
+        myI(2) = 20
+        myI(3) = 30
+        myI(4) = 40
+        myI(5) = 50
+        myI(6) = 60
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myI)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test04a_StringifyItem_Collection_NoTypes()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{10,20,30,40,50,60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+        	.Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier().StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test04b_StringifyItem_Collection_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{Integer: 10,Integer: 20,Integer: 30,Integer: 40,Integer: 50,Integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test04c_StringifyItem_Collection_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{integer: 10,integer: 20,integer: 30,integer: 40,integer: 50,integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test04d_StringifyItem_Collection_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test04e_StringifyItem_Collection_Group_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Collection: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test04f_StringifyItem_Collection_Group_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "collection: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test04g_StringifyItem_Collection_Group_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itembyindex1: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myC As Collection = New Collection
+        With myC
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myC)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test05a_StringifyItem_ArrayList_NoTypes()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{10,20,30,40,50,60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier().StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test05b_StringifyItem_ArrayList_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{Integer: 10,Integer: 20,Integer: 30,Integer: 40,Integer: 50,Integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test05c_StringifyItem_ArrayList_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{integer: 10,integer: 20,integer: 30,integer: 40,integer: 50,integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test05d_StringifyItem_ArrayList_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test05e_StringifyItem_ArrayList_Group_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "ArrayList: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test05f_StringifyItem_ArrayList_Group_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "arraylist: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test05g_StringifyItem_ArrayList_Group_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itembyindex0: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList = New ArrayList
+        With myAL
+            .Add 10
+            .Add 20
+            .Add 30
+            .Add 40
+            .Add 50
+            .Add 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test05h_StringifyItem_UninitArrayList_Group_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "admin: {Nothing}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myAL As ArrayList
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myAL)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+
+    '@TestMethod("Stringifier")
+    Private Sub Test06a_StringifyItem_Queue_NoTypes()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{10,20,30,40,50,60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myQ As Queue = Queue()
+        With myQ
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier().StringifyItem(myQ)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test06b_StringifyItem_Queue_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{Integer: 10,Integer: 20,Integer: 30,Integer: 40,Integer: 50,Integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test06c_StringifyItem_Queue_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{integer: 10,integer: 20,integer: 30,integer: 40,integer: 50,integer: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test06d_StringifyItem_Queue_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test06e_StringifyItem_Queue_Group_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "Queue: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test06f_StringifyItem_Queue_Group_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "queue: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test06g_StringifyItem_Queue_Group_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itembytoarray: {number: 10,number: 20,number: 30,number: 40,number: 50,number: 60}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myStk As Queue = Queue()
+        With myStk
+            .Enqueue 10
+            .Enqueue 20
+            .Enqueue 30
+            .Enqueue 40
+            .Enqueue 50
+            .Enqueue 60
+        End With
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myStk)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+   
+
+    '@TestMethod("Stringifier")
+    Private Sub Test07a_StringifyItem_ItemObject_NoTypes()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "{42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier().StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test07b_StringifyItem_ItemObject_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "PointXY: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+    '@TestMethod("Stringifier")
+    Private Sub Test07c_StringifyItem_ItemObject_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "compoundobject: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_FVarType).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test07d_StringifyItem_ItemObject_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itemobject: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_Group).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test07e_StringifyItem_ItemObject_Group_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itemobject: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_vbVarType).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test07f_StringifyItem_ItemObject_Group_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itemobject: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_FVarType).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+
+
+    '@TestMethod("Stringifier")
+    Private Sub Test07g_StringifyItem_ItemObject_Group_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As String
+        myExpected = "itemobject: {42,84}"
+    
+        Dim myResult As String
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myP As PointXY = PointXY(42, 84)
+        
+        myResult = Stringifier(e_VarGenre.m_Group, e_VarGenre.m_Group).StringifyItem(myP)
+        'Assert:
+        Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+        Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+   
+   
+    '@TestMethod("Stringifier")
+    Private Sub Test08a_StringifyItem_admin_NoTypes()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant
+        myExpected = Array("Null", "Empty", "Nothing", "Error 42")
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myV() As Variant
+        myV = Array("Null", "Empty", "Nothing", VBA.CStr(VBA.CVErr(42)))
+        
+        Dim myResult As Variant
+        ReDim myResult(0 To 3)
+        Dim myIndex As Long
+        For myIndex = 0 To 3
+            myResult(myIndex) = Stringifier().StringifyItem(myV(myIndex))
+        Next
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+         Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+   
+    '@TestMethod("Stringifier")
+    Private Sub Test08b_StringifyItem_admin_VBA()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant
+        myExpected = Array("Null: Null", "Empty: Empty", "Nothing: {Nothing}", "Error: Error 42")
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myV() As Variant
+        myV = Array(Null, Empty, Nothing, VBA.CVErr(42))
+        
+        Dim myResult As Variant
+        ReDim myResult(0 To 3)
+        Dim myIndex As Long
+        For myIndex = 0 To 3
+            myResult(myIndex) = Stringifier(e_VarGenre.m_vbVarType).StringifyItem(myV(myIndex))
+        Next
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+         Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test08c_StringifyItem_admin_TB()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant
+        myExpected = Array("null: Null", "empty: Empty", "nothing: {Nothing}", "error: Error 42")
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myV() As Variant
+        myV = Array(Null, Empty, Nothing, VBA.CVErr(42))
+        
+        Dim myResult As Variant
+        ReDim myResult(0 To 3)
+        Dim myIndex As Long
+        For myIndex = 0 To 3
+            myResult(myIndex) = Stringifier(e_varGenre.m_FVarType).StringifyItem(myV(myIndex))
+        Next
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+         Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+    
+    '@TestMethod("Stringifier")
+    Private Sub Test08d_StringifyItem_admin_Group()
+
+        'on error GoTo TestFail
+    
+        'Arrange:
+        Dim myExpected As Variant
+        myExpected = Array("admin: Null", "admin: Empty", "admin: {Nothing}", "admin: Error 42")
+    
+        'Act:  Again we need to sort The result SeqC to get the matching array
+        
+        Dim myV() As Variant
+        myV = Array(Null, Empty, Nothing, VBA.CVErr(42))
+        
+        Dim myResult As Variant
+        ReDim myResult(0 To 3)
+        Dim myIndex As Long
+        For myIndex = 0 To 3
+            myResult(myIndex) = Stringifier(e_VarGenre.m_Group).StringifyItem(myV(myIndex))
+        Next
+        'Assert:
+        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    
+    TestExit:
+        '@Ignore UnhandledOnErrorResumeNext
+        'on error Resume Next
+    
+        Exit Sub
+    TestFail:
+         Debug.Print CurrentComponentName, CurrentProcedureName, " raised an error: #" & Err.Number & " - " & Err.Description
+        Resume TestExit
+    End Sub
+End Module
