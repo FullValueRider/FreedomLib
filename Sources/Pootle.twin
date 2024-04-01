@@ -8,6 +8,36 @@ Type TestType
 End Type
 
 
+Public Sub TestSABounds()
+    Dim mySA(1 To 3, 2 To 4, 3 To 5) As Variant
+    
+    Dim myBounds As Variant = ArrayUtils.Bounds(mySA)
+End Sub
+Public Sub NameOfTestType()
+    Dim myType As TestType
+    myType.x = 42
+    Debug.Print VBA.TypeName(myType)
+End Sub
+
+Public Sub TestIsMissing()
+    Dim myA() As Variant
+    PrintMissingStatus myA
+    
+    Dim myB As Variant = Array()
+    PrintMissingStatus myB
+    
+End Sub
+
+Public Sub PrintMissingStatus(Optional ByRef ipMissing As Variant)
+    Debug.Print VBA.IsMissing(ipMissing)
+End Sub
+
+Sub TestNArrayAssignment()
+    Dim myA() As Long
+    ' line below gives a runtime error
+    myA(1) = 42
+End Sub
+
 Public Sub testVarvt()
     ' Demonstrates that arrays containg UDT cannot be converted to a variant
     Dim myVar() As TestType
@@ -79,7 +109,7 @@ Public Sub ErrTypename()
 End Sub
 	Sub Testadmin()
 		
-    	Debug.Print TypeInfo.IsNotNull(Empty)
+    	Debug.Print VarInfo.IsNotNull(Empty)
         
 	End Sub
     
@@ -93,7 +123,7 @@ End Sub
     Public Function GetName() As Variant
     	Return Array("MyName", 42)
     End Function
-    Public Sub TestIsMissing()
+    Public Sub TestVarIsMissing()
     	OptionalVar
     End Sub
     Public Sub OptionalVar(Optional ByRef ipItem As Variant)

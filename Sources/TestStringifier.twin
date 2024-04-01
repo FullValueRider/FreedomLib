@@ -1299,7 +1299,7 @@ Module TestStringifier
     
         'Arrange:
         Dim myExpected As String
-        myExpected = "mpObject: {42,84}"
+        myExpected = "Object: {42,84}"
     
         Dim myResult As String
     
@@ -1309,6 +1309,8 @@ Module TestStringifier
         
         myResult = Stringifier(e_VarGenre.m_VBA).StringifyItem(myP)
         'Assert:
+        ' Debug.Print
+        ' Debug.Print myExpected, myResult
         Assert.Exact.AreEqual myExpected, myResult, CurrentProcedureName
     
     TestExit:

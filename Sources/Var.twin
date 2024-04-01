@@ -1,14 +1,17 @@
-[Description("Class Var is a replacement for the Variant class.  It provides the metadata of TypeInfo via properties of an encapsulated variable (the cargo)")]
+[Description("Class Var is a replacement for the Variant class.  It provides the metadata of VarInfo via properties of an encapsulated variable (the cargo)")]
 Class Var
     /* 
-        Class Var provides TypeInfo data about the encapsulated variable using fluent notation
-        e.g. myVar.FirstIndex rather than TypeInfo.FirstIndex(myVar)
+        Class Var provides VarInfo metadata about the encapsulated variable using fluent notation
+        e.g. myVar.FirstIndex rather than VarInfo.FirstIndex(myVar)
         
-        The class does not provide any mechanism for changin the value(2) of the encapsulated variable
+        The class does not provide any mechanism for changing the value(s) of the encapsulated variable
         
-        To do this the encapsulated variable should be reference by the 'Cargo' method
+        To do this the encapsulated variable should be referenced by the 'Cargo' method
         
-        In the case that Cargo encapsulated an Arrray, cargo returns the address of the safearray structure
+        In the case that Cargo encapsulated an Arrray, cargo returns A Matrix instance
+        
+        Changing the values held by the item encapsulated by Cargo will mutate the original item (even Arrays)
+        
     */
     Attribute VB_Creatable = True
     Attribute VB_PredeclaredId = True
@@ -30,20 +33,23 @@ Class Var
         Ranks                                   As Long
         IsMissing                               As Boolean
         IsNumeric                               As Boolean
+        ' Capture VBA IsArray value
         IsArray                                 As Boolean
+        ' Capture tb ISArrayInitialised value   
         IsArrayInitialized                      As Boolean
+        IsObject                                As Boolean
         
         ' the id array from TpeInfo.NameToIds
-        ' the name array from TypeInfos.FidToNames
+        ' the name array from VarInfos.FidToNames
         Ids                                     As Variant
         Names                                   As Variant
        
         
         FlibName                                As String
         FlibId                                  As Long
-        FirstIndex                              As Variant  ' 1 based array 
-        LastIndex                               As Variant  ' 1 based array
-        Count                                   As Variant  ' 0 based array.  number of items in valiable.  0 is used for total count for arrays
+        FirstIndexes                            As Variant  ' 1 based array 
+        LastIndexes                             As Variant  ' 1 based array
+        Counts                                  As Variant  ' 0 based array.  number of items in valiable.  0 is used for total count for arrays
         
     End Type
  
@@ -63,82 +69,128 @@ Class Var
     End Function
 
     Friend Function ConstructInstance(ByRef ipItem As Variant) As Var
-        
-        /*
-         If ipitem is a parray then var will encapsulate it as a Matrix before storing in Cargo
-         NArrys and Uarrays can be copied 'as is' as they don't carry the baggage of a data area
-        */
-        
-        ' 2. Inability to use UDT
-        '   For a UDT we can get to this point in twinBasic but we can only determine that it is a UDT we have no access
-        '   to any of the udt members and cannot pass it to any of the VBAIs... methods
-        
-        
-        If Not TypeInfo.TryGetIds(ipItem, p.Ids) Then
-            Err.Raise 17 + vbObjectError, _
-                MY_LOC & CurrentProcedureName, _
-                "Type not assigned: " & VBA.TypeName(ipItem)
-        End If
-        
-        ' Trygetids was successful so no need to test for names.
-        TypeInfo.TryGetNames VBA.CLng(p.Ids(e_GenreField.m_FLib)), p.Names
-        
-        p.FlibName = p.Names(e_VarGenre.m_FLib)
-        p.FlibId = p.Ids(e_VarGenre.m_FLib)
         /* 
             P.Count has a lower bound of 0 because this is where we store the total number of elements of an array
-            First and last index arrays have a lower bound of 1 to match the ranks used in L?UBound statements
+            First and last index arrays have a lower bound of 1 to match the ranks used in L/UBound statements
         */
-        ReDim p.Count(0 To 1)
-        ReDim p.FirstIndex(1 To 1)
-        ReDim p.LastIndex(1 To 1)
+        ReDim p.Counts(0 To 1)
+        ReDim p.FirstIndexes(1 To 1)
+        ReDim p.LastIndexes(1 To 1)
         
-        p.Cargo = Empty
-       ' p.Cargobackup = 0
         
-       /*
-            The initialisation routines below are used to setp the first/lastindex properties
-       
-       */
-       
-        If p.FlibId(e_GenreField.m_FLib) = e_Id.m_PArray Then
-            p.Cargo = Matrix().Bind(ipItem)
-        ElseIf VBA.IsObject(ipItem) Then
-            Set p.Cargo = ipItem
-        Else
-            p.Cargo = ipItem
+        /* 
+            the definition of object is 'different' in FreeedomLib
+            so we just call into varinfo as we don't need to repeat the code.
+        */
+        
+        p.IsObject = VarInfo.IsObject(ipItem)
+        /*
+            IsMissing is a property of the Variant Type
+            an IsMissing Variant can be forwrded as a paramter like any other variant
+            so the ISMissing property can apparently originate for a set of parameters
+            which are not Optional.  Hence the test below
+        */
+        If VBA.IsMissing(ipItem) Then
+        /* 
+            Need to asddress the issue that a UArray returns true for IsMissing
+        */
+            If Not VBA.IsArray(ipItem) Then
+                InitialiseForNotAccessibleType
+                Return Me
+            End If
         End If
+        
+        If Not VarInfo.TryGetIds(ipItem, p.Ids) Then
+            InitialiseForNotAccessibleType
+            Return Me
+        End If
+        p.FlibId = p.Ids(e_VarGenre.m_FLib)
+        
+        ' Trygetids was successful so no need to test for names.
+        VarInfo.TryGetNames p.FlibId, p.Names
+        p.FlibName = p.Names(e_VarGenre.m_FLib)
+        
+        /*
+            Assign ipItem to p.cargo **BUT**
+             There are two cases we need to avoid 
+             1. A UDT  - Currently (as of March 2024) a UDT cannot be passed by Variant if only declared in VBA/tb
+             2. A PArray - We want to wrap the Parray in a Matrix to avoid copying the array
+        */
+        
+        ' Unlike VBA, tb allows a valid vartype value to be returned for a UDT
+        If VBA.VarType(ipItem) = vbUserDefinedType Then
+            InitialiseForNotAccessibleType
+            Return Me
+        End If
+        
        
-        Select Case p.Ids(e_VarGenre.m_Group)
+        
+        
+        p.IsArray = VBA.IsArray(ipItem)
+        
+        /* 
+            tb IsArrayInitialized  returns True for both UArrays and PArays
+            In Freedomlib we want False for UArrays and True for PArrays
+        */
+        p.IsArrayInitialized = False
+        Select Case True
             
-            Case e_Group.m_Admin, e_Group.m_Boolean, e_Group.m_Number, e_Group.m_mpObject
-                ' also deals with the case of is missing as missing is part of the admin group.
-                InitialiseForSingleValue ipItem
+            Case p.IsArray
                 
-            Case e_Group.m_UDT
-                InitialiseForUDT
+                If VBA.IsArrayInitialized(ipItem) Then
+                    If (UBound(ipItem) >= LBound(ipItem)) Then
+                        ' Found a PArray
+                        p.IsArrayInitialized = True
+                    End If
+                End If
+        
+                If p.IsArrayInitialized Then
+                /*
+                    PArray is dealt with as a MatrixInstance
+                    whilst we retain typeinfomation relating to a PArray.
+                */
+                    Set p.Cargo = Matrix().Bind(ipItem)
+                Else
+                    p.Cargo = ipItem
+                End If
                 
-            Case e_Group.m_NotInit
-                InitialiseForNotInit ipItem
+            Case VBA.IsObject(ipItem)
+                Set p.Cargo = ipItem
                 
-            Case e_Group.m_Holder
-                
-                Select Case p.Ids(e_VarGenre.m_Holder)
-                    
-                    Case e_Holder.m_String
-                        InitialiseForHolderString VBA.CStr(ipItem)
-                        
-                    Case e_Holder.m_Array
-                        InitialiseForHolderArray ipItem
-                        
-                    Case e_Holder.m_ArrayObj
-                        InitialiseforHolderArrayObj
-                        
-                    Case Else
-                        InitialiseforHolderObject ipItem
-                
-                End Select
-                
+            Case Else
+                p.Cargo = ipItem
+
+        End Select
+        
+        
+        
+       
+       
+        /*
+            Any multiindex entities now need to be set to indicate an initialised array
+            as these types are objects with array like indexing
+        */
+        If p.Ids(e_VarGenre.m_Entity) = e_Entity.m_MultiIndex Then
+            p.IsArray = True
+            p.IsArrayInitialized = True
+        End If
+        
+        If p.Ids(e_VarGenre.m_FLib) = e_Id.m_String Then
+            p.IsNumeric = VBA.IsNumeric(p.Cargo)
+        End If
+        
+         
+       /*
+            The following initialisation routines are used to setup the first/lastindex properties
+       */
+        Select Case p.Ids(e_VarGenre.m_Entity)
+            
+            Case e_Entity.m_NotAccessible:                      InitialiseForNotAccessibleType
+            Case e_Entity.m_SingleValue, e_Entity.m_MultiValue: InitialiseForSingleValue
+            Case e_Entity.m_MultiIndex:                         InitialiseforMultiIndex
+            Case e_Entity.m_GroupValue:                         InitialiseForGroupValue
+            Case Else:                                          InitialiseForSingleIndex
+            
        End Select
         
         Return Me
@@ -146,141 +198,79 @@ Class Var
     End Function
 
     
-    Private Sub InitialiseForHolderString(ByRef ipItem As String)
-        
-        p.Cargo = ipItem
-        p.Count(0) = VBA.Len(ipItem)
-        p.Count(1) = p.Count(0)
-        p.Ranks = 1
-        p.FirstIndex(1) = 1
-        p.LastIndex(1) = p.Count(0)
-        p.IsArray = False
-        p.IsNumeric = VBA.IsNumeric(ipItem)
-        p.IsArrayInitialized = False
-        p.IsMissing = False
-        
-    End Sub
-    
-    Private Sub InitialiseForUDT()
-        ' A udt passed as a variant can be determine dto be a UDT using vartype.  No other information is available.
-        p.Cargo = Null
-        p.Count(0) = 1
-        p.Count(1) = 1
-        p.Ranks = 0
-        p.FirstIndex(1) = 1
-        p.LastIndex(1) = -1
-        p.IsArray = False
-        p.IsArrayInitialized = False
-        p.IsNumeric = False
-        p.IsMissing = False
-            
-    End Sub
-    
-    Private Sub InitialiseForNotInit(ByRef ipArray As Variant)
-        
-        p.Cargo = ipArray
+    Private Sub InitialiseForNotAccessibleType()
+        /*
+            A not accessible type is a variable 
+            - that cannot store a value (NArray, UArray)
+            - whose values are not accessible (UDT passed as variant)
+            - A type which has not been assigned by FreedomLib
+        */
         p.Ranks = -1
-        p.Count(0) = -1
-        p.Count(1) = -1
-        p.FirstIndex(1) = 0
-        p.LastIndex(1) = -1
-        p.IsArray = True
-        p.IsArrayInitialized = (p.FlibId = e_Id.m_UArray)
+        p.Counts(0) = -1
+        p.Counts(1) = -1
+        p.FirstIndexes(1) = 0
+        p.LastIndexes(1) = -1
        
-        p.IsNumeric = False
+        p.IsMissing = True  ' Is missing is enforced to indicate that there is no accessible data
+        
+    End Sub
+    
+    Public Sub InitialiseForSingleValue()
+
+        p.Ranks = 0
+        p.Counts(0) = 1
+        p.Counts(1) = 1
+        p.FirstIndexes(1) = 1
+        p.LastIndexes(1) = 1
         p.IsMissing = False
         
     End Sub
     
-    
-    Private Sub InitialiseForHolderArray(ByRef ipItem As Variant)
-        ' a holder array is a PArry (has dimensioned safearraystructure)
-        ' Make a backup copy of the cargo variant
-        ' this copy will be used in the terminate code to remove the reference to the external array
-        [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargobackup), ByVal [_HiddenModule].VarPtr(ipItem)
-        ' copy the reference to the external array to p.cargo to avoid copying the array
-        [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal [_HiddenModule].VarPtr(p.Cargo), ByVal [_HiddenModule].VarPtr(ipItem)
-        'Lock the array to prevent literal arrays from being destroyed when this method completes
-        'current poor workaround for not being able to determine the difference between myArray and Array(1,2,3,4,5)
-        Unsafe.LockArray(p.Cargo)
+    Private Sub InitialiseForGroupValue()
         
-        
-        p.Ranks = Unsafe.SADims(p.Cargo)
-        ReDim p.Count(0 To p.Ranks)
-        ReDim p.FirstIndex(1 To p.Ranks)
-        ReDim p.LastIndex(1 To p.Ranks)
-        p.Count(0) = TypeInfo.Count(p.Cargo)
-        Dim myIndex As Long
-        For myIndex = 1 To p.Ranks
-            p.Count(myIndex) = TypeInfo.Count(p.Cargo, myIndex)
-            p.FirstIndex(myIndex) = TypeInfo.FirstIndex(p.Cargo, myIndex)
-            p.LastIndex(myIndex) = TypeInfo.LastIndex(p.Cargo, myIndex)
-        Next
-        
-        p.IsArray = True
-        p.IsArrayInitialized = True
-        p.IsNumeric = False
-        p.IsMissing = False
-        
-    End Sub
-    
-    Private Sub InitialiseforHolderObject(ByRef ipitem As Variant)
-        
-        Set p.Cargo = ipitem
+        p.Counts(0) = VBA.Len(p.Cargo)
+        p.Counts(1) = p.Counts(0)
         p.Ranks = 1
-        p.Count(0) = ipitem.count
-        p.Count(1) = p.Count(0)
+        p.FirstIndexes(1) = 1
+        p.LastIndexes(1) = p.Counts(0)
+        p.IsMissing = False
+        
+    End Sub
+    
+    Private Sub InitialiseForSingleIndex()
+        
+        p.Counts(0) = p.Cargo.count
+        p.Counts(1) = p.Counts(0)
         
         Select Case p.Ids(e_VarGenre.m_Holder)
-            Case e_Holder.m_ItemByIndex0
-                p.FirstIndex(1) = 0
-                p.LastIndex(1) = p.Count(0) - 1
-            Case e_Holder.m_ItemByIndex1
-                p.FirstIndex(1) = 1
-                p.LastIndex(1) = p.Count(0)
-            Case e_Holder.m_ItemByKey
-                p.FirstIndex(1) = 1
-                p.LastIndex(1) = p.Count(0)
-            Case e_Holder.m_ItemByToArray
-                p.FirstIndex(1) = 0
-                p.LastIndex(1) = p.Count(0) - 1
+            Case e_Holder.m_ItemByIndex0, e_Holder.m_ItemByToArray, e_Holder.m_ItemByKey, e_Holder.m_MapperByIndex, e_Holder.m_MapperByKey
+                p.FirstIndexes(1) = 0
+                p.LastIndexes(1) = p.Counts(0) - 1
                 
+            Case e_Holder.m_ItemByIndex1
+                p.FirstIndexes(1) = 1
+                p.LastIndexes(1) = p.Counts(0)
         End Select
         
-        p.IsArray = False
-        p.IsArrayInitialized = False
-        p.IsNumeric = False
+        p.Ranks = 1
+        p.IsMissing = False
+      
+    End Sub
+    
+      
+    Private Sub InitialiseforMultiIndex()
+        /*
+            pArrays As encapsulated in a Matrix instance
+        */
+        p.Ranks = p.Cargo.ranks
+        p.FirstIndexes = p.Cargo.bounds(0)
+        p.LastIndexes = p.Cargo.bounds(1)
+        p.Counts = p.Cargo.bounds(2)
         p.IsMissing = False
         
     End Sub
     
-    Public Sub InitialiseForSingleValue(ByRef ipItem As Variant)
-
-        If VBA.IsObject(ipItem) Then
-            Set p.Cargo = ipItem
-        Else
-            p.Cargo = ipItem
-        End If
-        If VBA.IsMissing(ipItem) Then
-            p.Count(0) = -1
-            p.Count(1) = -1
-            p.FirstIndex(1) = 0
-            p.LastIndex(1) = -1
-            p.IsMissing = True
-        Else
-            
-            p.Count(0) = 1
-            p.Count(1) = 1
-            p.Ranks = 0
-            p.FirstIndex(1) = 1
-            p.LastIndex(1) = 1
-            p.IsMissing = False
-        End If
-        p.IsArray = False
-        p.IsArrayInitialized = False
-        p.IsNumeric = VBA.IsNumeric(ipItem)
-        
-    End Sub
+   
 
     Public Property Get Cargo() As Variant
     	Return p.Cargo
@@ -293,7 +283,7 @@ Class Var
             'Unsafe.SafeArrayUnlock ByVal ArrayPtr(p.Cargo)
             ' Restore the original content of p.cargo so that the garbage collector
             ' doesn't try to do a double deletion of the safe array.
-            [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal VarPtr(p.Cargo), ByVal VarPtr(p.Cargobackup)
+           ' [_HiddenModule].vbaCopyBytes Unsafe.myVarSize, ByVal VarPtr(p.Cargo), ByVal VarPtr(p.Cargobackup)
         End If
        
     End Sub
@@ -336,7 +326,7 @@ Class Var
     End Function
 
     
-    ' Description("FreedomLib suggests you might prefer to use the IsNumber method which avoids the coercion of strings to numbers")
+    ' Description("Returns True if ipItem is a string that can be interpreted as a number.  Use IsNumber for non string tests")
     Public Function IsNumeric() As Boolean
         Return p.IsNumeric
     End Function
@@ -402,7 +392,7 @@ Class Var
     End Function
         
     Public Function IsObject() As Boolean
-        Return (p.Ids(e_VarGenre.m_Entity) = e_Entity.m_Object)
+        Return p.IsObject
     End Function
         
     Public Function IsNotObject() As Boolean
@@ -481,8 +471,8 @@ Class Var
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 ' Entity functions
     ' m_NotDefined
-    ' m_Simple = &H300                           ' holds a single value* that can be assigned without set
-    ' m_First = e_Entity.m_Simple
+    ' m_SingleValue = &H300                           ' holds a single value* that can be assigned without set
+    ' m_First = e_Entity.m_SingleValue
     ' m_UserDefinedType                          ' a grouping of variables which are accessible using unique names qualified by the parent name 
     ' m_Array
     ' m_Last
@@ -490,7 +480,7 @@ Class Var
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
     Public Function IsSimple() As Boolean
-        Return p.Ids(e_VarGenre.m_Entity) = e_Entity.m_Simple
+        Return p.Ids(e_VarGenre.m_Entity) = e_Entity.m_SingleValue
     End Function
 
     Public Function IsNotSimple() As Boolean
@@ -499,7 +489,7 @@ Class Var
 
 
     Public Function IsUDT() As Boolean
-        Return p.Ids(e_VarGenre.m_Entity) = e_Entity.m_UserDefinedType
+        Return p.Ids(e_VarGenre.m_FLib) = e_Id.m_UDT
     End Function
 
     Public Function IsNotUDT() As Boolean
@@ -596,8 +586,22 @@ Class Var
     End Function
 
     [Description("Returns the value of VBA.IsArray")]
-    Public Function IsArray() As Boolean
-        Return p.IsArray
+    Public Function IsArray(Optional ByVal ipArrayStatus As e_ArrayStatus = e_ArrayStatus.m_Any) As Boolean
+        
+        If Not p.IsArray Then
+            Return False
+        End If
+        
+        Select Case ipArrayStatus
+            Case e_ArrayStatus.m_Any
+                Return True
+            Case e_ArrayStatus.m_Null
+                Return ipArrayStatus = e_ArrayStatus.m_Null
+            Case e_ArrayStatus.m_Unpopulated
+                Return ipArrayStatus = e_ArrayStatus.m_Unpopulated
+            Case e_ArrayStatus.m_Populated
+                Return ipArrayStatus = e_ArrayStatus.m_Populated
+        End Select
     End Function
     
     Public Function IsNotArray() As Boolean
@@ -641,8 +645,38 @@ Class Var
     End Function
 
 
-    Public Function IsMapper() As Boolean
-        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_Mapper)
+    Public Function IsMapper(Optional ByVal ipMapperType As e_MapperTYpe = e_mapperType.m_Any) As Boolean
+        
+        Select Case ipMapperType
+            
+            Case e_MapperTYpe.m_Any
+                
+                Select Case p.Ids(e_VarGenre.m_Holder)
+                    Case e_Holder.m_MapperByKey, e_Holder.m_MapperByIndex
+                        Return True
+                    Case Else
+                        Return False
+                End Select
+                
+            Case e_MapperTYpe.m_ByIndex
+                If p.Ids(e_VarGenre.m_Holder) = e_Holder.m_MapperByIndex Then
+                    Return True
+                Else
+                    Return False
+                End If
+                
+            Case e_MapperTYpe.m_ByKey
+                If p.Ids(e_VarGenre.m_Holder) = e_Holder.m_MapperByKey Then
+                   Return True
+               Else
+                   Return False
+               End If
+               
+            Case Else
+                Return False
+                
+        End Select
+        Return (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_MapperByIndex) Or (p.Ids(e_VarGenre.m_Holder) = e_Holder.m_MapperByKey)
     End Function
 
     Public Function IsNotMapper() As Boolean
@@ -655,21 +689,7 @@ Class Var
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========
 
     Public Function Bounds() As Variant
-        
-        Dim myFirstIndexes As Variant
-        ReDim myFirstIndexes(1 To p.Ranks)
-        
-        Dim myLastIndexes As Variant
-        ReDim myLastIndexes(1 To p.Ranks)
-        
-        Dim myIndex As Long
-        For myIndex = 1 To p.Ranks
-            myFirstIndexes(myIndex) = p.FirstIndex(myIndex)
-            myLastIndexes(myIndex) = p.LastIndex(myIndex)
-        Next
-        
-        Return Array(myFirstIndexes, myLastIndexes)
-        
+        Return Array(p.FirstIndexes, p.LastIndexes, p.Counts)
     End Function
     
     [Description("Returns true if the variable is an array with no dimensions e.g. Dim myArray() as long")]
@@ -723,7 +743,7 @@ Class Var
         If ipRank = 0 Then Return 1&
         If ipRank < 1 Then Return 0
         
-        Return p.FirstIndex(ipRank)
+        Return p.FirstIndexes(ipRank)
     End Function
 
     [Description("Returns the last index of the specified rank. Returns -1 for non-holder. Defaults to rank 1 for holders)")]
@@ -732,12 +752,12 @@ Class Var
         If ipRank = 0 Then Return 1&
         If ipRank < 1 Then Return -1&
         
-        Return p.LastIndex(ipRank)
+        Return p.LastIndexes(ipRank)
     End Function
 
     [Description("Returns True if variable is a holder type and contins 1 or more values")]
     Public Function HoldsItems() As Boolean
-        Return (p.Ranks > 0 And p.Count(0) > 0)
+        Return (p.Ranks > 0 And p.Counts(0) > 0)
     End Function
 
     Public Function LacksItems() As Boolean
@@ -748,9 +768,10 @@ Class Var
     [Description("returns the number of values per access method represented by the variable. Non holders are 1, empty holders and unallocated arrays return -1,")]
     Public Function Count(Optional ipRank As Long = 0) As Long
         If ipRank < 0 Then Return -1&
-        If p.Ranks = 0 Then Return 1&
+        If ipRank = 0 Then Return p.Counts(0)
+        Contract.IsInNumRange ipRank, 1, p.Ranks, MY_LOC & CurrentProcedureName
         If ipRank > p.Ranks Then Return -1&
-        Return p.Count(ipRank)
+        Return p.Counts(ipRank)
     End Function
 
     '[ Description ("Returns true if the variable is a single dimension array populated with a single item which is a single dimension array (i.e. a forwarded paramarray))]
@@ -798,14 +819,14 @@ Class Var
 
 
 
-    [Description("Returns the name 'TypeInfo'")]
+    [Description("Returns the name 'VarInfo'")]
     Public Property Get TypeName() As String
         Return MY_TYPENAME
     End Property
 
     Private Sub TypeNotAssigned(ByRef ipItem As Variant, ByRef ipLoc As String)
         Err.Raise 17 + vbObjectError, _
-            "Freedomlib.FBase.TypeInfo." & ipLoc, _
+            "Freedomlib.FBase.VarInfo." & ipLoc, _
             "Type " & VBA.TypeName(ipItem) & " not known to FreedomLib"
     End Sub
 '========1=========2=========3=========4=========5=========6=========7=========8=========9=========A=========B=========

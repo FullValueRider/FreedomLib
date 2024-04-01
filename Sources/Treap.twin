@@ -10,7 +10,7 @@ Class Treap
     Attribute VB_PredeclaredId = True
     Attribute VB_Exposed = True
     Option Explicit
-    option base 0
+    Option Base 0
     
     /* 
     T1, T2 and T3 are subtrees of the tree rooted with y
@@ -306,7 +306,7 @@ Class Treap
     End Sub
     
     
-   Public Function Keys() As Collection
+   Public Function KeysColl() As Collection
         
         Dim myC As Collection = New Collection
         GetKeys s.Root, myC
@@ -314,7 +314,7 @@ Class Treap
         
     End Function
     
-    Public Function Items() As Collection
+    Public Function ItemsColl() As Collection
         
         Dim myC As Collection = New Collection
         GetItems s.Root, myC
@@ -322,13 +322,37 @@ Class Treap
         
     End Function
     
-    Public Function Pairs() As Collection
+    Public Function PairsColl() As Collection
         
         Dim myC As Collection = New Collection
         GetPairs s.Root, myC
         Return myC
         
     End Function
+    
+    Public Function Keys() As Variant
+        
+         Dim myC As Collection = New Collection
+         GetKeys s.Root, myC
+         Return myC.Items
+        
+     End Function
+    
+     Public Function Items() As Variant
+        
+         Dim myC As Collection = New Collection
+         GetItems s.Root, myC
+         Return myC.Items
+        
+     End Function
+    
+     Public Function Pairs() As Variant
+        
+         Dim myC As Collection = New Collection
+         GetPairs s.Root, myC
+         Return myC.Items
+        
+     End Function
     
     Private Sub GetKeys(ByRef ipNode As TNode, ByRef myC As Collection)
         

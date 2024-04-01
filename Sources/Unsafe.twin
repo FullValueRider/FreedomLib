@@ -132,6 +132,9 @@ Public Const FADF_RESERVED                          As Integer = &HF008
     
     Public Declare PtrSafe Sub SafeArrayGetVartype Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipLong As LongPtr)
     Public Declare PtrSafe Sub SafeArrayGetLocks Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipLong As LongPtr)
+    Public Declare PtrSafe Sub SafeArrayGetLBound Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipDim As Long, ByVal oipBoud As LongPtr)
+    Public Declare PtrSafe Sub SafeArrayGetUBound Lib "oleaut32" (ByVal ipArrayAddr As LongPtr, ByVal ipDim As Long, ByVal oipBoud As LongPtr)
+    
     ' from modHashD
     '    Public Type SAFEARRAY1D
     '      cDims                 As Integer
@@ -183,7 +186,7 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         pvData                                  As LongPtr
     End Type
     
-    Public Type SAIDudt
+    Public Type SA1Dudt
         cDims                                   As Integer
         fFeatures                               As Integer
         cbElements                              As Long
@@ -193,7 +196,7 @@ Public Const FADF_RESERVED                          As Integer = &HF008
         lLbound1D                               As Long
     End Type
     
-    Public Type SA3udt
+    Public Type SA3Dudt
         cDims                                   As Integer
         fFeatures                               As Integer
         cbElements                              As Long

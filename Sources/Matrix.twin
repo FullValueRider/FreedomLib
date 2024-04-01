@@ -11,7 +11,7 @@ Class Matrix
     Attribute VB_Exposed = True
     Attribute VB_Creatable = True
     
-    Private Const My_TYPENAME                   As String = "Matrix"
+    Private Const MY_TYPENAME                   As String = "Matrix"
     
     Private Type State
         
@@ -27,9 +27,9 @@ Class Matrix
 
     Private Type properties
         cDims                                   As Integer
-        Count                                   As Long
         UsingInternalSA                         As Boolean
-        UsingExternalSA                        As Boolean
+        UsingExternalSA                         As Boolean
+        Bounds                                  As Variant ' Jagged array of arrays of firstindexes, lastindexes,
     End Type
     
     Private p                                   As properties
@@ -55,23 +55,20 @@ Class Matrix
         End If
         
         s.SAAddr = SafeArrayCreate(VT_VARIANT, p.cDims, Unsafe.SApvDAta(s.SABounds))
-        p.Count = 1
-        Dim myIndex As Long = 0
-        For myIndex = LBound(s.SABounds) To UBound(s.SABounds) - 1 Step 2
-            p.Count *= s.SABounds(myIndex)
-        Next
+        p.Bounds = ArrayUtils.BoundsByAddr(s.SAAddr)
+        
         Return Me
         
     End Function
     
     Private Sub ValidateRanks(ByRef ipRanks As Variant)
     ' if there are no ranks then exit
-        If TypeInfo.LacksItems(ipRanks) Then
+        If VarInfo.LacksItems(ipRanks) Then
             p.UsingInternalSA = False
             Exit Sub
         End If
         p.UsingInternalSA = True
-        p.cDims = TypeInfo.Count(ipRanks)
+        p.cDims = VarInfo.Count(ipRanks)
         ' dimension the variables that hold the rgsaBounds 
         ' and the read/write address
         ' for SABounds we have 2 longs per dimension (Index = number of elements, Index+1 = lower bound)
@@ -84,7 +81,7 @@ Class Matrix
         Dim myIndex As Long = LBound(s.SABounds)
         For Each myRank In ipRanks
             Select Case True
-                Case TypeInfo.IsNumber(myRank)
+                Case VarInfo.IsNumber(myRank)
                         
                     ValidateOneValueRank VBA.CLng(myRank)
                     ' s.bounds is used to provide the data for rgsabounds 
@@ -97,7 +94,7 @@ Class Matrix
                     s.SABounds(myIndex) = myRank
                     s.SABounds(myIndex + 1) = 0
                     
-                Case TypeInfo.IsPArray(myRank)
+                Case VarInfo.IsPArray(myRank)
                     
                     ' for an array rank there must betwoitemswhere the first Item is <= the second item
                     ValidateArrayRank myRank
@@ -131,7 +128,7 @@ Class Matrix
      
     Private Sub ValidateArrayRank(ByRef ipRank As Variant)
         
-        If TypeInfo.IsNotPArray(ipRank) Then
+        If VarInfo.IsNotPArray(ipRank) Then
             Err.Raise 17 + vbObjectError, _
                 CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
                 "Rank array: Lbound must be <= Ubound. Got " & VBA.CStr(ipRank(LBound(ipRank))) & ", " & VBA.CStr(ipRank(LBound(ipRank) + 1))
@@ -149,14 +146,14 @@ Class Matrix
                 "Rank array has only 1 value. Expecting 2"
         End If
         
-        If TypeInfo.IsNotNumber(ipRank(LBound(ipRank))) Then
+        If VarInfo.IsNotNumber(ipRank(LBound(ipRank))) Then
             Err.Raise 17 + vbObjectError, _
                 CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
                 "Rank array: First value is not a number.  Got " & VBA.TypeName(ipRank(LBound(ipRank))) & ": " & VBA.CStr(ipRank(LBound(ipRank)))
         
         End If
         
-        If TypeInfo.IsNotNumber(ipRank(LBound(ipRank) + 1)) Then
+        If VarInfo.IsNotNumber(ipRank(LBound(ipRank) + 1)) Then
             Err.Raise 17 + vbObjectError, _
                 CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & "Deb", _
                 "RankArray: Second value is not a number.  Got " & VBA.TypeName(ipRank(LBound(ipRank) + 1)) & ": " & VBA.CStr(ipRank(LBound(ipRank) + 1))
@@ -227,17 +224,7 @@ Class Matrix
         
         s.SAAddr = Unsafe.SAAddr(ipArray)
         p.cDims = Unsafe.SADims(ipArray)
-        ReDim s.SABounds((p.cDims * 2) - 1)
-        ReDim s.SACurLoc(p.cDims - 1)
-        
-        Dim myBoundsIndex As Long = 0
-        Dim myRank As Long
-        
-        For myRank = 1 To p.cDims
-            s.SABounds(myBoundsIndex + 1) = LBound(ipArray, myRank)
-            s.SABounds(myBoundsIndex) = UBound(ipArray, myRank) - LBound(ipArray, myRank) + 1
-            myBoundsIndex += 2
-        Next
+        p.Bounds = ArrayUtils.BoundsByAddr(s.SAAddr)
         
         Return Me
         
@@ -254,16 +241,7 @@ Class Matrix
     End Function
     
     Public Function Bounds() As Variant
-        Dim myBounds() As Long
-        ReDim myBounds(1 To p.cDims)
-        
-        Dim myIndex As Long = 0
-        Dim myBoundsIndex As Long = 1
-        For myIndex = 0 To UBound(s.SABounds) - 1 Step 2
-            
-            myBounds(myBoundsIndex) = Array(s.SABounds(myIndex + 1), s.SABounds(myIndex) + s.SABounds(myIndex + 1) - 1)
-            myBoundsIndex += 1
-        Next
+        Return p.Bounds
     End Function
     /*
         The property Item for Matrix requires that we can specify a variable number of paramters
@@ -312,7 +290,7 @@ Class Matrix
         Dim myLoc As String = CurrentProjectName & Chars.tbPeriod & CurrentComponentName & Chars.tbPeriod & CurrentProcedureName
         
         Contract.IsPArray ipLoc, myLoc, "Invalid array address (Loc)"
-        Contract.IsValue Unsafe.SADims(ipLoc), 1&, myLoc, "Invalid number of dimensions.  Expecting 1.  Got " & Unsafe.SADims(ipLoc)
+        Contract.IsEqualVal Unsafe.SADims(ipLoc), 1&, myLoc, "Invalid number of dimensions.  Expecting 1.  Got " & Unsafe.SADims(ipLoc)
         
         ' A complicating factor for location is that the indeces must be specified in the reverse order
         ' to the equivalent dim statement.  This requirement is clearly specified at
@@ -340,18 +318,12 @@ Class Matrix
     
     Public Function Count(Optional ipRank As Long = 0) As Long
         Contract.IsInNumRange ipRank, 0, p.cDims, CurrentProjectName & tbPeriod & CurrentComponentName & tbPeriod & CurrentProcedureName
-        If ipRank = 0 Then
-            
-            Return p.Count
-        Else
-            ' SABounds stores the number of elements followed by the lower bound in a vector of longs
-            Return s.SABounds((ipRank - 1) * 2)
-        End If
+        Return p.Bounds(2)(ipRank)
     End Function
     
     
     Public Property Get TypeName() As String
-        Return My_TYPENAME
+        Return MY_TYPENAME
     End Property
     
  End Class

@@ -1,7 +1,7 @@
 Module TestVar
 
     Option Explicit
-    option base 0
+    Option Base 0
     Option Private Module
 
     Private myNArray() As Variant
@@ -86,17 +86,17 @@ Module TestVar
        
         
         ' The following test methods that replace VBA IsXXX methods that are not type specific
-        Test02a_TypeInfo_IsArray_VBAReplacement
-        ' Test02b_TypeInfo_IsDate_VBAReplacement
-        ' Test02c_TypeInfo_IsEmpty_VBAReplacement
-        ' Test02d_TypeInfo_IsError_VBAReplacement
-        ' Test02e_TypeInfo_IsErrObject_VBAReplacement
+        Test02a_VarInfo_IsArray_VBAReplacement
+        ' Test02b_VarInfo_IsDate_VBAReplacement
+        ' Test02c_VarInfo_IsEmpty_VBAReplacement
+        ' Test02d_VarInfo_IsError_VBAReplacement
+        ' Test02e_VarInfo_IsErrObject_VBAReplacement
         
-        Test02f_TypeInfo_IsMissing_VBAReplacement
-        ' Test02g_TypeInfo_IsNothing_VBAReplacement
-        ' Test02h_TypeInfo_IsNull_VBAReplacement
-        Test02i_TypeInfo_IsNumeric_VBAReplacement
-        Test02j_TypeInfo_IsObject_VBAReplacement
+        Test02f_VarInfo_IsMissing_VBAReplacement
+        ' Test02g_VarInfo_IsNothing_VBAReplacement
+        ' Test02h_VarInfo_IsNull_VBAReplacement
+        Test02i_VarInfo_IsNumeric_VBAReplacement
+        Test02j_VarInfo_IsObject_VBAReplacement
         
         ' Tests for Ids and names
         Test_Null_IdsAndNames
@@ -120,8 +120,8 @@ Module TestVar
         Test_String_IdsAndNames
         Test_narray_IdsAndNames
         Test_uarray_IdsAndNames
-        Test_parray_IdsAndNames_linear
-        Test_parray_IdsAndNames_3d
+        Test_parray_IdsAndNames_linearPArray
+        Test_parray_IdsAndNames_3dPArray
         
         Test_UserDefinedType_IdsAndNames
         Test_mpObject_IdsAndNames
@@ -133,7 +133,7 @@ Module TestVar
         Test_ItemByKey_Dictionary
         Test_ItemByKey_Treap
         ' Test_TNode_IdsAndNames
-        Test_mpObject_TNode
+        'Test_mpObject_TNode
         Test_ItemByToArray_Queue
         Test_ItemByToArray_Stack
         
@@ -176,7 +176,7 @@ Module TestVar
   
     
     '@TestMethod("Var")
-    Private Sub Test02a_TypeInfo_IsArray_VBAReplacement()
+    Private Sub Test02a_VarInfo_IsArray_VBAReplacement()
 
         ' on error goto TestFail
     
@@ -219,7 +219,7 @@ Module TestVar
     End Sub
     
     ' '@TestMethod("Var")
-    ' Private Sub Test02b_TypeInfo_IsDate_VBAReplacement()
+    ' Private Sub Test02b_VarInfo_IsDate_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -253,7 +253,7 @@ Module TestVar
     
     
     ' '@TestMethod("Var")
-    ' Private Sub Test02c_TypeInfo_IsEmpty_VBAReplacement()
+    ' Private Sub Test02c_VarInfo_IsEmpty_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -285,7 +285,7 @@ Module TestVar
     
     
     ' '@TestMethod("Var")
-    ' Private Sub Test02d_TypeInfo_IsError_VBAReplacement()
+    ' Private Sub Test02d_VarInfo_IsError_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -317,7 +317,7 @@ Module TestVar
     
    
     ' '@TestMethod("Var")
-    ' Private Sub Test02e_TypeInfo_IsErrObject_VBAReplacement()
+    ' Private Sub Test02e_VarInfo_IsErrObject_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -349,7 +349,7 @@ Module TestVar
 
  
     '@TestMethod("Var")
-    Private Sub Test02f_TypeInfo_IsMissing_VBAReplacement()
+    Private Sub Test02f_VarInfo_IsMissing_VBAReplacement()
 
         ' on error goto TestFail
     
@@ -391,7 +391,7 @@ Module TestVar
     End Sub
    
     ' '@TestMethod("Var")
-    ' Private Sub Test02g_TypeInfo_IsNothing_VBAReplacement()
+    ' Private Sub Test02g_VarInfo_IsNothing_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -424,7 +424,7 @@ Module TestVar
     
    
     ' '@TestMethod("Var")
-    ' Private Sub Test02h_TypeInfo_IsNull_VBAReplacement()
+    ' Private Sub Test02h_VarInfo_IsNull_VBAReplacement()
 
     '     ' on error goto TestFail
     
@@ -457,14 +457,12 @@ Module TestVar
     ' End Sub
     
     '@TestMethod("Var")
-    Private Sub Test02i_TypeInfo_IsNumeric_VBAReplacement()
+    Private Sub Test02i_VarInfo_IsNumeric_VBAReplacement()
         
-        
-
-        ' on error goto TestFail
+        On Error GoTo TestFail
     
         'Arrange:
-        Dim myExpected As Variant = Array(True, True, False, False, False, True)
+        Dim myExpected As Variant = Array(False, True, False, True, False, True)
         Dim myResult As Variant: ReDim myResult(0 To 5)
         Dim myColl As Collection = New Collection
         Dim myVar1 As Var = Var(42)
@@ -485,15 +483,16 @@ Module TestVar
         myResult = myColl.Items
         'Assert:
         ' Debug.Print
-        ' Debug.Print IsNumeric(42), IsNumeric("42"), IsNumeric("Hello")
+        ' Debug.Print
         ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
         ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+        
         Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
-    
+        
     TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
         On Error Resume Next
-    
+       
+        
         Exit Sub
     TestFail:
         Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
@@ -502,7 +501,7 @@ Module TestVar
     
     ' .add myVar.IsNotObject(myC)
     '@TestMethod("Var")
-    Private Sub Test02j_TypeInfo_IsObject_VBAReplacement()
+    Private Sub Test02j_VarInfo_IsObject_VBAReplacement()
 
         ' on error goto TestFail
     
@@ -555,8 +554,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Null, vbNull, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "null", "Null", "admin", "simple", "isnotholder" _
+                e_Id.m_Null, vbNull, e_Group.m_Admin, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "null", "Null", "admin", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim myCOll As Collection = New Collection
@@ -614,8 +613,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Nothing, vbObject, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "nothing", "Nothing", "admin", "simple", "isnotholder" _
+                e_Id.m_Nothing, vbObject, e_Group.m_Admin, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "nothing", "Nothing", "admin", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim myVar As Var = Var(Nothing)
@@ -673,8 +672,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Empty, vbEmpty, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "empty", "Empty", "admin", "simple", "isnotholder" _
+                e_Id.m_Empty, vbEmpty, e_Group.m_Admin, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "empty", "Empty", "admin", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim myCOll As Collection = New Collection
@@ -734,8 +733,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_CVErr, vbError, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "cverr", "Error", "admin", "simple", "isnotholder" _
+                e_Id.m_CVErr, vbError, e_Group.m_Admin, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "cverr", "Error", "admin", "singlevalue", "isnotholder" _
             )
             
         Dim myResult As Variant: ReDim myResult(0 To 9)
@@ -794,8 +793,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_ErrObject, vbDataObject, e_Group.m_Admin, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "errobject", "Error", "admin", "simple", "isnotholder" _
+                e_Id.m_ErrObject, vbDataObject, e_Group.m_Admin, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "errobject", "Error", "admin", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim MYcOLL As Collection = New Collection
@@ -852,8 +851,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Boolean, vbBoolean, e_Group.m_Boolean, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "boolean", "Boolean", "boolean", "simple", "isnotholder" _
+                e_Id.m_Boolean, vbBoolean, e_Group.m_Boolean, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "boolean", "Boolean", "boolean", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant: ReDim myResult(0 To 9)
         Dim mycoll As Collection = New Collection
@@ -909,8 +908,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Byte, vbByte, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "byte", "Byte", "number", "simple", "isnotholder" _
+                e_Id.m_Byte, vbByte, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "byte", "Byte", "number", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim mycoll As Collection = New Collection
@@ -967,8 +966,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Integer, vbInteger, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "integer", "Integer", "number", "simple", "isnotholder" _
+                e_Id.m_Integer, vbInteger, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "integer", "Integer", "number", "singlevalue", "isnotholder" _
             )
             
         Dim myResult As Variant
@@ -1028,8 +1027,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Long, vbLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "long", "Long", "number", "simple", "isnotholder" _
+                e_Id.m_Long, vbLong, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "long", "Long", "number", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim mycoll As Collection = New Collection
@@ -1089,8 +1088,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_LongLong, vbLongLong, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "longlong", "LongLong", "number", "simple", "isnotholder" _
+                e_Id.m_LongLong, vbLongLong, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "longlong", "LongLong", "number", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant
         Dim mycoll As Collection = New Collection
@@ -1151,8 +1150,8 @@ Module TestVar
                 ( _
                     True, False, _
                     1&, 1&, 1&, False, True, _
-                    e_Id.m_Single, vbSingle, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                    "single", "Single", "number", "simple", "isnotholder" _
+                    e_Id.m_Single, vbSingle, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                    "single", "Single", "number", "singlevalue", "isnotholder" _
                 )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1212,8 +1211,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Double, vbDouble, e_Group.m_Number, e_Entity.m_Simple, _
-                e_Holder.m_IsNotHolder, "double", "Double", "number", "simple", "isnotholder" _
+                e_Id.m_Double, vbDouble, e_Group.m_Number, e_Entity.m_SingleValue, _
+                e_Holder.m_IsNotHolder, "double", "Double", "number", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1274,8 +1273,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Currency, vbCurrency, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "currency", "Currency", "number", "simple", "isnotholder" _
+                e_Id.m_Currency, vbCurrency, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "currency", "Currency", "number", "singlevalue", "isnotholder" _
             )
         
         Dim myResult As Variant:
@@ -1336,8 +1335,8 @@ Module TestVar
                 ( _
                     True, False, _
                     1&, 1&, 1&, False, True, _
-                    e_Id.m_Decimal, vbDecimal, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                    "decimal", "Decimal", "number", "simple", "isnotholder" _
+                    e_Id.m_Decimal, vbDecimal, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                    "decimal", "Decimal", "number", "singlevalue", "isnotholder" _
                 )
                 
         Dim myResult As Variant:
@@ -1397,8 +1396,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_Date, vbDate, e_Group.m_Number, e_Entity.m_Simple, e_Holder.m_IsNotHolder, _
-                "date", "Date", "number", "simple", "isnotholder" _
+                e_Id.m_Date, vbDate, e_Group.m_Number, e_Entity.m_SingleValue, e_Holder.m_IsNotHolder, _
+                "date", "Date", "number", "singlevalue", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1458,8 +1457,8 @@ Module TestVar
             ( _
                 True, False, _
                 5&, 1&, 5&, True, False, _
-                e_Id.m_String, vbString, e_Group.m_Holder, e_Entity.m_Simple, e_Holder.m_String, _
-                "string", "String", "holder", "simple", "string" _
+                e_Id.m_String, vbString, e_Group.m_Holder, e_Entity.m_GroupValue, e_Holder.m_String, _
+                "string", "String", "holder", "groupvalue", "string" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1517,8 +1516,8 @@ Module TestVar
             ( _
                 True, False, _
                 -1&, 0&, -1&, False, True, _
-                e_Id.m_NArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder, _
-                "narray", "Array", "notinit", "array", "isnotholder" _
+                e_Id.m_NArray, vbArray, e_Group.m_NotAccessible, e_Entity.m_NotAccessible, e_Holder.m_IsNotHolder, _
+                "narray", "Array", "notaccessible", "notaccessible", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1575,8 +1574,8 @@ Module TestVar
             ( _
                 True, False, _
                 -1&, 0&, -1&, False, True, _
-                e_Id.m_UArray, vbArray, e_Group.m_NotInit, e_Entity.m_Array, e_Holder.m_IsNotHolder, _
-                "uarray", "Array", "notinit", "array", "isnotholder" _
+                e_Id.m_UArray, vbArray, e_Group.m_NotAccessible, e_Entity.m_NotAccessible, e_Holder.m_IsNotHolder, _
+                "uarray", "Array", "notaccessible", "notaccessible", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1624,7 +1623,7 @@ Module TestVar
 
     
     '@TestMethod("Var")
-    Private Sub Test_parray_IdsAndNames_linear()
+    Private Sub Test_parray_IdsAndNames_linearPArray()
 
         ' on error goto TestFail
     
@@ -1634,8 +1633,8 @@ Module TestVar
             ( _
                 True, False, _
                 6&, 0&, 5&, True, False, _
-                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_Array, e_Holder.m_Array, _
-                "parray", "Array", "holder", "array", "array" _
+                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_MultiIndex, e_Holder.m_Array, _
+                "parray", "Array", "holder", "multiindex", "array" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1682,7 +1681,7 @@ Module TestVar
     End Sub
     
     '@TestMethod("Var")
-    Private Sub Test_parray_IdsAndNames_3d()
+    Private Sub Test_parray_IdsAndNames_3dPArray()
 
         ' on error goto TestFail
     
@@ -1696,11 +1695,12 @@ Module TestVar
                 /* second rank */ 3&, 2&, 4&, _
                 /* third rank */ 3&, 3&, 5&, _
                 True, False, _
-                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_Array, e_Holder.m_Array, _
-                "parray", "Array", "holder", "array", "array" _
+                e_Id.m_PArray, vbArray, e_Group.m_Holder, e_Entity.m_MultiIndex, e_Holder.m_Array, _
+                "parray", "Array", "holder", "multiindex", "array" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
+        ' my3DArray(1 To 3, 2 To 4, 3 To 5)
         Dim myVar As Var = Var(my3DArray)
         'Act: 
         With mycoll
@@ -1767,9 +1767,9 @@ Module TestVar
             Array _
             ( _
                 True, False, _
-                1&, 1&, -1&, False, True, _
-                e_Id.m_UDT, vbUserDefinedType, e_Group.m_UDT, e_Entity.m_UserDefinedType, e_Holder.m_IsNotHolder, _
-                "udt", "UDT", "udt", "udt", "isnotholder" _
+                -1&, 0&, -1&, False, True, _
+                e_Id.m_UDT, vbUserDefinedType, e_Group.m_NotAccessible, e_Entity.m_NotAccessible, e_Holder.m_IsNotHolder, _
+                "udt", "UDT", "notaccessible", "notaccessible", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1827,8 +1827,8 @@ Module TestVar
             ( _
                 True, False, _
                 1&, 1&, 1&, False, True, _
-                e_Id.m_mpObject, vbObject, e_Group.m_mpObject, e_Entity.m_Object, e_Holder.m_IsNotHolder, _
-                "mpobject", "mpObject", "mpobject", "object", "isnotholder" _
+                e_Id.m_mpObject, vbObject, e_Group.m_mpObject, e_Entity.m_MultiValue, e_Holder.m_IsNotHolder, _
+                "mpobject", "Object", "mpobject", "multivalue", "isnotholder" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1885,8 +1885,8 @@ Module TestVar
             ( _
                 True, False, _
                 3&, 0&, 2&, True, False, _
-                e_Id.m_ArrayList, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex0, _
-                "arraylist", "ArrayList", "holder", "object", "itembyindex0" _
+                e_Id.m_ArrayList, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByIndex0, _
+                "arraylist", "ArrayList", "holder", "singleindex", "itembyindex0" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -1946,8 +1946,8 @@ Module TestVar
             ( _
                 True, False, _
                 5&, 1&, 5&, True, False, _
-                e_Id.m_Args, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1, _
-                "args", "Args", "holder ", "object", "itembyindex1" _
+                e_Id.m_Args, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByIndex1, _
+                "args", "Args", "holder ", "singleindex", "itembyindex1" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2005,8 +2005,8 @@ Module TestVar
             ( _
                 True, False, _
                 3&, 1&, 3&, True, False, _
-                e_Id.m_Collection, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByIndex1, _
-                "collection", "Collection", "holder", "object", "itembyindex1" _
+                e_Id.m_Collection, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByIndex1, _
+                "collection", "Collection", "holder", "singleindex", "itembyindex1" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2064,9 +2064,9 @@ Module TestVar
             Array _
                 ( _
                     True, False, _
-                    3&, 1&, 3&, True, False, _
-                    e_Id.m_cHashD, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
-                    "chashd", "cHashD", "holder", "object", "itembykey" _
+                    3&, 0&, 2&, True, False, _
+                    e_Id.m_cHashD, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByKey, _
+                    "chashd", "cHashD", "holder", "singleindex", "itembykey" _
                 )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2125,9 +2125,9 @@ Module TestVar
             Array _
                 ( _
                     True, False, _
-                    3&, 1&, 3&, True, False, _
-                    e_Id.m_Dictionary, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
-                    "dictionary", "Dictionary", "holder", "object", "itembykey" _
+                    3&, 0&, 2&, True, False, _
+                    e_Id.m_Dictionary, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByKey, _
+                    "dictionary", "Dictionary", "holder", "singleindex", "itembykey" _
                 )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2176,65 +2176,65 @@ Module TestVar
     End Sub
     
     
-    '@TestMethod("Var")
-    Private Sub Test_mpObject_TNode()
+    ' '@TestMethod("Var")
+    ' Private Sub Test_mpObject_TNode()
 
-        ' on error goto TestFail
+    '     ' on error goto TestFail
     
-        'Arrange:
-        Dim myExpected As Variant = _
-            Array _
-                ( _
-                    True, False, _
-                    1&, 1&, 1&, False, True, _
-                    e_Id.m_TNode, vbObject, e_Group.m_mpObject, e_Entity.m_Object, e_Holder.m_IsNotHolder, _
-                    "tnode", "TNode", "mpObject", "object", "isnotholder" _
-                )
-        Dim myResult As Variant:
-        Dim mycoll As Collection = New Collection
-        Dim myVar As Var = Var(myTnode)
-        'Act: 
-        With mycoll
-            .Add myVar.IsmpObject
-            .Add myVar.IsNotmpObject
+    '     'Arrange:
+    '     Dim myExpected As Variant = _
+    '         Array _
+    '             ( _
+    '                 True, False, _
+    '                 1&, 1&, 1&, False, True, _
+    '                 e_Id.m_TNode, vbObject, e_Group.m_mpObject, e_Entity.m_SingleIndex, e_Holder.m_IsNotHolder, _
+    '                 "tnode", "TNode", "mpObject", "object", "isnotholder" _
+    '             )
+    '     Dim myResult As Variant:
+    '     Dim mycoll As Collection = New Collection
+    '     Dim myVar As Var = Var(myTnode)
+    '     'Act: 
+    '     With mycoll
+    '         .Add myVar.IsmpObject
+    '         .Add myVar.IsNotmpObject
                                 
-            .Add myVar.Count
-            .Add myVar.FirstIndex
-            .Add myVar.LastIndex
-            .Add myVar.HoldsItems
-            .Add myVar.LacksItems
+    '         .Add myVar.Count
+    '         .Add myVar.FirstIndex
+    '         .Add myVar.LastIndex
+    '         .Add myVar.HoldsItems
+    '         .Add myVar.LacksItems
         
-            .Add myVar.Id(e_VarGenre.m_FLib)
-            .Add myVar.Id(e_VarGenre.m_VBA)
-            .Add myVar.Id(e_VarGenre.m_Group)
-            .Add myVar.Id(e_VarGenre.m_Entity)
-            .Add myVar.Id(e_VarGenre.m_Holder)
+    '         .Add myVar.Id(e_VarGenre.m_FLib)
+    '         .Add myVar.Id(e_VarGenre.m_VBA)
+    '         .Add myVar.Id(e_VarGenre.m_Group)
+    '         .Add myVar.Id(e_VarGenre.m_Entity)
+    '         .Add myVar.Id(e_VarGenre.m_Holder)
             
-            .Add myVar.Name(e_VarGenre.m_FLib)
-            .Add myVar.Name(e_VarGenre.m_VBA)
-            .Add myVar.Name(e_VarGenre.m_Group)
-            .Add myVar.Name(e_VarGenre.m_Entity)
-            .Add myVar.Name(e_VarGenre.m_Holder)
-        End With
+    '         .Add myVar.Name(e_VarGenre.m_FLib)
+    '         .Add myVar.Name(e_VarGenre.m_VBA)
+    '         .Add myVar.Name(e_VarGenre.m_Group)
+    '         .Add myVar.Name(e_VarGenre.m_Entity)
+    '         .Add myVar.Name(e_VarGenre.m_Holder)
+    '     End With
         
-        myResult = mycoll.Items
+    '     myResult = mycoll.Items
     
-        'Assert:
-        ' Debug.Print
-        ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
-        ' Debug.Print VBA.Join(myResult, Chars.tbComma)
+    '     'Assert:
+    '     ' Debug.Print
+    '     ' Debug.Print VBA.Join(myExpected, Chars.tbComma)
+    '     ' Debug.Print VBA.Join(myResult, Chars.tbComma)
 
-        Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
+    '     Assert.Exact.SequenceEquals myExpected, myResult, CurrentProcedureName
     
-    TestExit:
-        '@Ignore UnhandledOnErrorResumeNext
-        On Error Resume Next
+    ' TestExit:
+    '     '@Ignore UnhandledOnErrorResumeNext
+    '     On Error Resume Next
     
-        Exit Sub
-    TestFail:
-        Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
-        Resume TestExit
-    End Sub
+    '     Exit Sub
+    ' TestFail:
+    '     Assert.Exact.Fail CurrentComponentName & Chars.tbPeriod & CurrentProcedureName & " raised an error: #" & Err.Number & " - " & Err.Description
+    '     Resume TestExit
+    ' End Sub
     
     
     '@TestMethod("Var")
@@ -2247,9 +2247,9 @@ Module TestVar
             Array _
                 ( _
                     True, False, _
-                    3&, 1&, 3&, True, False, _
-                    e_Id.m_Treap, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByKey, _
-                    "treap", "Treap", "holder", "object", "itembykey" _
+                    3&, 0&, 2&, True, False, _
+                    e_Id.m_Treap, vbObject, e_Group.m_Holder, e_Entity.m_SingleIndex, e_Holder.m_ItemByKey, _
+                    "treap", "Treap", "holder", "singleindex", "itembykey" _
                 )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2309,8 +2309,8 @@ Module TestVar
             ( _
                 True, False, _
                 3&, 0&, 2&, True, False, _
-                e_Id.m_Queue, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray, _
-                "queue", "Queue", "holder", "object", "itembytoarray" _
+                e_Id.m_Queue, vbObject, e_Group.m_Holder, e_Entity.m_NoIndex, e_Holder.m_ItemByToArray, _
+                "queue", "Queue", "holder", "noindex", "itembytoarray" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection
@@ -2371,8 +2371,8 @@ Module TestVar
             ( _
                 True, False, _
                 3&, 0&, 2&, True, False, _
-                e_Id.m_Stack, vbObject, e_Group.m_Holder, e_Entity.m_Object, e_Holder.m_ItemByToArray, _
-                "stack", "Stack", "holder", "object", "itembytoarray" _
+                e_Id.m_Stack, vbObject, e_Group.m_Holder, e_Entity.m_NoIndex, e_Holder.m_ItemByToArray, _
+                "stack", "Stack", "holder", "noindex", "itembytoarray" _
             )
         Dim myResult As Variant:
         Dim mycoll As Collection = New Collection

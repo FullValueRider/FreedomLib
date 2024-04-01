@@ -1,0 +1,17 @@
+Module PootleUDT
+
+	' add your procedures here
+    Sub TestPassAsVariant()
+        Dim myUdt As TextXY
+        Debug.Print myUdt.X
+        Debug.Print myUdt.Y
+        IsUDTVariantOK myUdt
+        Debug.Print myUdt.X
+        Debug.Print myUdt.Y
+    End Sub
+    
+    Sub IsUDTVariantOK(ByRef ipUDT As Variant)
+        ipUDT.X = 42
+        ipUDT.Y = 84
+    End Sub
+End Module

@@ -18,15 +18,15 @@ Class Stringifier
     '     m_Group = m_Last
     ' End Enum
     
-    ' 'the Enum below renames the e_GenreField enum from e_TypeInfo and adds m_none as a -1 option
+    ' 'the Enum below renames the e_VarGenre enum from e_VarInfo and adds m_none as a -1 option
     ' Public Enum e_VarGenre
     	
     '     m_None = -1
     '     m_First = e_VarGenre.m_None
-    '     m_FLib = e_GenreField.m_FLib
-    '     m_VBA = e_GenreField.m_VBA
-    '     m_Group = e_GenreField.m_Group
-    '     m_Entity = e_GenreField.m_Entity
+    '     m_FLib = e_VarGenre.m_FLib
+    '     m_VBA = e_VarGenre.m_VBA
+    '     m_Group = e_VarGenre.m_Group
+    '     m_Entity = e_VarGenre.m_Entity
     '     m_Last
     '     m_Holder = e_vargenre.m_last
     ' End Enum
@@ -45,7 +45,7 @@ Class Stringifier
     
     Private p                                       As Properties
     
-    'ValueGenre and HolderGenre specify the Genre to use for the typename (see Class TypeInfo enum e_Genre).
+    'ValueGenre and HolderGenre specify the Genre to use for the typename (see Class VarInfo enum e_Genre).
     '
     Private Type State
         ' DefaultValueGenre                           As e_VarGenre ' If type the variable Type is inserted before the value
@@ -213,12 +213,12 @@ Class Stringifier
   
         ' Get Ids for this item
         Dim myIds As Variant
-        If Not TypeInfo.TryGetIds(ipItem, myIds) Then
+        If Not VarInfo.TryGetIds(ipItem, myIds) Then
             Return "Type not assigned: " & VBA.TypeName(ipItem)
         End If
         
         Dim myNames As Variant
-        If Not TypeInfo.TryGetNames(VBA.CLng(myIds(e_GenreField.m_FLib)), myNames) Then
+        If Not VarInfo.TryGetNames(VBA.CLng(myIds(e_VarGenre.m_FLib)), myNames) Then
             Return "Type not assigned: & VBA.TypeName(ipItem)"
         End If
         
@@ -234,12 +234,12 @@ Class Stringifier
       
        
         ' use the ids to get the genre name for the holder
-        If myIds(e_GenreField.m_Group) = e_Group.m_Holder Then
+        If myIds(e_VarGenre.m_Group) = e_Group.m_Holder Then
             Dim myHolderName As String
             If s.HolderGenre = e_VarGenre.m_None Then
                 myHolderName = vbNullString
             Else
-                If myIds(e_GenreField.m_Holder) = e_Holder.m_Array And s.HolderGenre = e_VarGenre.m_VBA Then
+                If myIds(e_VarGenre.m_Holder) = e_Holder.m_Array And s.HolderGenre = e_VarGenre.m_VBA Then
                     myHolderName = VBA.TypeName(ipItem)
                 Else
                     myHolderName = myNames(s.HolderGenre)
@@ -277,7 +277,7 @@ Class Stringifier
                 Case Else
                     Err.Raise 17 + vbObjectError, _
                         "FreedomLib.FBase.Stringifier.StringifyItem", _
-                        "Holder name not known " & TypeInfo.Name(ipItem, e_VarGenre.m_Holder)
+                        "Holder name not known " & VarInfo.Name(ipItem, e_VarGenre.m_Holder)
                         
             End Select
         	
@@ -298,7 +298,7 @@ Class Stringifier
                    Case Else
                        Err.Raise 17 + vbObjectError, _
                        "FreedomLib.FBase.Stringifier.StringifyItem", _
-                       "Group name not known " & TypeInfo.Name(ipItem, e_VarGenre.m_Group)
+                       "Group name not known " & VarInfo.Name(ipItem, e_VarGenre.m_Group)
                End Select
             
             
@@ -363,7 +363,7 @@ Class Stringifier
         ' 	Return "!Not Populated!"
         ' End If
          
-        ' If TypeInfo.LacksItems(ipArray) Then
+        ' If VarInfo.LacksItems(ipArray) Then
         '     Return p.ArrayMarkup.Left & p.ArrayMarkup.Right
         '     Exit Function
         ' End If
@@ -395,7 +395,7 @@ Class Stringifier
         ' We know that some itembyindex objects (e.g. Seq classes) do not support for each
         ' so enumerate by index
         Dim myIndex As Long
-        For myIndex = TypeInfo.FirstIndex(ipItemByIndex) To TypeInfo.LastIndex(ipItemByIndex)
+        For myIndex = VarInfo.FirstIndex(ipItemByIndex) To VarInfo.LastIndex(ipItemByIndex)
             myC.Add StringifyItem(ipItemByIndex.item(myIndex))
         Next
     

@@ -10,7 +10,7 @@ Module TestAll
         Debug.Print
         
         TestStrs.StrsTests
-        TestTypeInfo.TypeInfoTests
+        TestVarInfo.VarInfoTests
         TestVar.VarTests
         TestStringifier.StringifierTests
         TestFormatter.FormatterTests

@@ -1,6 +1,6 @@
 Module ArrayUtils
 
-	
+	Private Const MY_LOC                                As String = "FreedomLib.ArrayUtils.Count."
     [Description("Returns a Paramarray as an array of longs after checking the the values are numbers. ")]  'but with the values in reverse order??
     Public Function Idx(ParamArray ipArrayAddress() As Variant) As Long()
         Dim myCodeLoc As String = "FreedomLib.FBase.ArrayInfo." & CurrentProcedureName
@@ -184,5 +184,84 @@ Module ArrayUtils
             "Invalid SafeArrayGetElement request"
         
     End Property
+    
+    Public Function Count(ByRef ipItem As Variant, Optional ByRef ipRank As Long = 0) As Long
+        
+        If ipRank > Unsafe.SADims(ipItem) Then
+            Err.Raise 17 + vbObjectError, _
+                MY_LOC & CurrentProcedureName, _
+                "Invalid rank"
+        End If
+        
+        If ipRank > 0 Then
+            Return UBound(ipItem, ipRank) - LBound(ipItem, ipRank) + 1
+        End If
+        
+        Dim myRank As Long
+        Dim myCount As Long = 1
+        For myRank = 1 To Unsafe.SADims(ipItem)
+            myCount *= ((UBound(ipItem, myRank) - LBound(ipItem, myRank)) + 1)
+        Next
+        
+        Return myCount
+        
+    End Function
+    
+    [Description("Return a jagged array where 0 = firsindexes, 1 = lastindexes, 2 = count")]
+    Public Function Bounds(ByRef ipItem As Variant) As Variant
+        
+        /*
+            This method returns an arrayof arrays of firstindexes, lastindexes and counts of a PArray
+            Bound(2)(0) is the count of the total number of elements in an array
+        */
+        If VarInfo.IsNotPArray(ipItem) Then
+            Return Array(Array(-1), Array(0), Array(-1))
+        End If
+        
+        Return GetBounds(Unsafe.SAAddr(ipItem))
+        
+        
+    End Function
+    
+    Public Function BoundsByAddr(ByRef ipItemAddr As LongPtr) As Variant
+        Dim myDims As Long
+        vbaCopyBytes LenB(Of Long), ByVal VarPtr(myDims), ByVal ipItemAddr
+        If myDims < 1 Then
+            Return Array(Array(0), Array(-1), Array(-1))
+        Else
+            Return GetBounds(ipItemAddr)
+        End If
+    End Function
+   
+    Private Function GetBounds(ByRef ipSAAddr As SA1Dudt) As Variant
+        
+        Dim myDims As Long = ipSAAddr.cDims
+        
+        Dim myFirstIndexes() As Long
+        ReDim myFirstIndexes(1 To myDims)
+        
+        Dim myLastIndexes() As Long
+        ReDim myLastIndexes(1 To myDims)
+        
+        /*
+            myCounts(0) Is Bound(2)(0)
+        */
+        Dim myCounts() As Long
+        ReDim myCounts(0 To myDims)
+        myCounts(0) = 1
+        Dim myLong As Long
+       
+        Dim myRank As Long
+        For myRank = 1 To myDims
+            SafeArrayGetLBound ByVal VarPtr(ipSAAddr), ByVal myRank, ByVal VarPtr(myFirstIndexes(myRank))
+            SafeArrayGetUBound ByVal VarPtr(ipSAAddr), ByVal myRank, ByVal VarPtr(myLastIndexes(myRank))
+            myCounts(myRank) = myLastIndexes(myRank) - myFirstIndexes(myRank) + 1
+            myCounts(0) *= myCounts(myRank)
+            'myRank += 1
+        Next
+        
+        Return Array(myFirstIndexes, myLastIndexes, myCounts)
+        
+    End Function
     
 End Module

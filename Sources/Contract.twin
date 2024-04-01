@@ -37,7 +37,7 @@ Class Contract
     End Sub
     
     [Description("True if ipItem is more than zero")]
-    Public Function IsValue(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+    Public Function IsEqualVal(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
         
         Dim myR As Boolean = (ipItem = ipValue)
         
@@ -50,7 +50,111 @@ Class Contract
         End If
         
         If VBA.LenB(ipMessage) = 0 Then
-            ipMessage = "Expecting a value matching " & VBA.CStr(ipValue) & ". Got " & VBA.CStr(ipItem)
+            ipMessage = "Expecting a value equal to " & VBA.CStr(ipValue) & ". Got " & VBA.CStr(ipItem)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsNotEqualVal(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem <> ipValue)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a value that is not equal to " & VBA.CStr(ipValue)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    
+    Public Function IsSameObj(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem Is ipValue)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting the same instance of class " & VBA.TypeName(ipValue)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    Public Function IsNotSameObj(ByRef ipItem As Variant, ByRef ipValue As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (ipItem IsNot ipValue)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a different instances of class " & VBA.TypeName(ipValue)
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsNullString(ByRef ipString As String, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (VBA.Len(ipString) = 0)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a null string. Got " & ipString
+        End If
+        
+        RaiseAnError ipLocation, ipMessage
+        
+    End Function
+    
+    [Description("True if ipItem is more than zero")]
+    Public Function IsNotNullString(ByRef ipString As String, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
+        
+        Dim myR As Boolean = (VBA.Len(ipString) = 0)
+        
+        If myR Then
+            Return myR
+        End If
+        
+        If ipReportBackAction = e_AllowReportBackAction.m_Continue Then
+            Return myR
+        End If
+        
+        If VBA.LenB(ipMessage) = 0 Then
+            ipMessage = "Expecting a populated string. Got vbNullString"
         End If
         
         RaiseAnError ipLocation, ipMessage
@@ -60,7 +164,7 @@ Class Contract
     [Description("True if ipItem is more than zero")]
     Public Function IsNotUDT(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ipMessage As String = vbnullstring, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
         
-        Dim myR As Boolean = TypeInfo.IsNotUDT(ipItem)
+        Dim myR As Boolean = VarInfo.IsNotUDT(ipItem)
         
         If myR Then
             Return myR
@@ -307,7 +411,7 @@ Class Contract
         Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError _
     ) As Boolean
 
-        Dim myNumber As Boolean = TypeInfo.IsNumber(ipNumber)
+        Dim myNumber As Boolean = VarInfo.IsNumber(ipNumber)
     
         If myNumber Then
             Exit Function
@@ -394,7 +498,7 @@ Class Contract
     Public Function HasId(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ByRef ipMessage As String = vbNullString, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
         
         Dim myIds As Variant
-        Dim myR As Boolean = TypeInfo.TryGetIds(ipItem, myIds)
+        Dim myR As Boolean = VarInfo.TryGetIds(ipItem, myIds)
         
         If myR Then
             Return myR
@@ -417,7 +521,7 @@ Class Contract
     Public Function HasNoId(ByRef ipItem As Variant, ByRef ipLocation As String, Optional ByRef ipMessage As String = vbNullString, Optional ByVal ipReportBackAction As e_AllowReportBackAction = m_RaiseError) As Boolean
         
         Dim myIds As Variant
-        Dim myR As Boolean = (Not TypeInfo.TryGetIds(ipItem, myIds))
+        Dim myR As Boolean = (Not VarInfo.TryGetIds(ipItem, myIds))
         
         If myR Then
             Return myR
@@ -428,7 +532,7 @@ Class Contract
         End If
         
         If VBA.Len(ipMessage) = 0 Then
-            ipMessage = "FreedomLib type assigned.  Name of " & TypeInfo.Name(ipItem)
+            ipMessage = "FreedomLib type assigned.  Name of " & VarInfo.Name(ipItem)
         End If
     
         RaiseAnError ipLocation, ipMessage
